@@ -2,42 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Paleta municipal */
-:root{
-  --brand: #a61d24;      /* rojo principal */
-  --brand-700: #8f171d;  /* hover/activo */
-  --brand-50: #fdecee;   /* sutil */
-  --ink: #0f172a;
-  --bg: #f7f7f8;
+/* =========================
+   Paleta municipal (global)
+   ========================= */
+:root {
+  --brand:      #8f1b1b; /* rojo institucional */
+  --brand-700:  #6f1414; /* hover/activo     */
+  --brand-50:   #fdecee; /* fondo sutil      */
+
+  --ink: #0f172a;        /* texto principal  */
+  --bg:  #f7f7f8;        /* fondo app        */
 }
 
-body { @apply bg-[var(--bg)] text-[var(--ink)]; }
+/* =========================
+   Base tipográfica moderna
+   ========================= */
+html {
+  /* Inter (inyectada vía next/font como --font-inter) */
+  font-family: var(--font-inter), system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  font-size: 15px; /* un toque más compacto que 16px */
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  @apply bg-[var(--bg)] text-[var(--ink)];
+}
 
-/* Helpers */
-.container-app{ @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl; }
-.card{ @apply rounded-xl border bg-white p-4 shadow-sm; }
-.badge{ @apply text-[10px] rounded px-2 py-0.5; }
-.badge-green{ @apply bg-emerald-50 text-emerald-700; }
+h1, h2, h3, h4, h5 {
+  font-weight: 600;
+  letter-spacing: -0.015em; /* look moderno */
+}
 
+/* =========================
+   Helpers de layout
+   ========================= */
+.container-app { @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl; }
+.card         { @apply rounded-xl border bg-white p-4 shadow-sm; }
+.card-body    { @apply space-y-4; }
+
+/* Pills/Badges */
+.badge       { @apply text-[10px] rounded px-2 py-0.5; }
+.badge-green { @apply bg-emerald-50 text-emerald-700; }
+
+/* Topbar sticky */
 .topbar {
   background: var(--brand);
   color: white;
   @apply sticky top-0 z-40;
 }
 .topbar a { @apply text-white/90 hover:text-white; }
+
+/* Botones */
 .btn-primary {
   background: var(--brand);
   color: #fff;
   @apply rounded-md px-3 py-2 text-sm shadow-sm transition;
 }
 .btn-primary:hover { background: var(--brand-700); }
-/* === Controles de formulario visibles y consistentes === */
-.label {
-  @apply block text-sm font-medium text-slate-700 mb-1;
-}
 
-.input,
-textarea.input {
+.btn {
+  @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm
+         font-medium transition shadow-sm border;
+}
+.btn-danger { @apply border-transparent bg-red-600 text-white hover:bg-red-700; }
+
+/* =========================
+   Formularios coherentes
+   ========================= */
+.label { @apply block text-sm font-medium text-slate-700 mb-1; }
+
+.input, textarea.input {
   @apply w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm
          placeholder:text-slate-400 shadow-sm
          focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500;
@@ -49,48 +83,18 @@ textarea.input {
          focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500;
 }
 
-/* Ayudas/nota bajo el campo */
-.help {
-  @apply text-xs text-slate-500 mt-1;
-}
+.help { @apply text-xs text-slate-500 mt-1; }
+.form-grid { @apply grid md:grid-cols-2 gap-5; }
 
-/* Grid rápido para formularios (dos columnas en desktop) */
-.form-grid {
-  @apply grid md:grid-cols-2 gap-5;
-}
-
-/* Opcional: cuerpo de las cards con separaciones cómodas */
-.card-body {
-  @apply space-y-4;
-}
-
-/* Botón base y variantes (si quieres un estilo por defecto) */
-.btn {
-  @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm
-         font-medium transition shadow-sm border;
-}
-.btn-danger {
-  @apply border-transparent bg-red-600 text-white hover:bg-red-700;
-}
-/* Animación de entrada sutil para tarjetas/elementos */
+/* =========================
+   Animación sutil
+   ========================= */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fadeInUp {
-  animation: fadeInUp .35s ease-out both;
-}
-:root { --brand: #911a1e; } /* ejemplo */
-/* Oculta scrollbar horizontal de las píldoras en navegadores comunes */
-.no-scrollbar {
-  -ms-overflow-style: none; /* IE/Edge */
-  scrollbar-width: none;   /* Firefox */
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
-}
+.animate-fadeInUp { animation: fadeInUp .35s ease-out both; }
 
-/* Paleta básica si aún no la tienes */
-:root {
-  --brand: #8f1b1b; /* rojo institucional */
-}
+/* Ocultar scrollbar horizontal (pills) */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

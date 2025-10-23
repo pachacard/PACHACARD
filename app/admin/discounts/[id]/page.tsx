@@ -3,15 +3,10 @@ import DiscountForm from "../ui";
 
 export const dynamic = "force-dynamic";
 
-export default async function EditDiscountPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function EditDiscountPage({ params }: { params: { id: string } }) {
   const [item, businesses, categories] = await Promise.all([
     prisma.discount.findUnique({
       where: { id: params.id },
-      // Traemos solo los IDs de categorías para preseleccionar los checkboxes
       include: { categories: { select: { categoryId: true } } },
     }),
     prisma.business.findMany({
@@ -28,12 +23,5 @@ export default async function EditDiscountPage({
     return <div className="text-sm text-slate-600">No encontrado.</div>;
   }
 
-  // Form con datos (editar)
-  return (
-    <DiscountForm
-      item={item as any}
-      businesses={businesses}
-      categories={categories}
-    />
-  );
+  return <DiscountForm item={item as any} businesses={businesses} categories={categories} />;
 }

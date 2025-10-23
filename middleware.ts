@@ -1,43 +1,40 @@
-// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+const SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Rutas públicas: login, logout (si lo usas), auth de NextAuth, canje por QR y estáticos
-  if (
-    pathname === "/login" ||
-    pathname === "/logout" ||
-    pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/redeem") ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.endsWith(".png") ||
-    pathname.endsWith(".jpg") ||
-    pathname.endsWith(".svg")
-  ) {
+  if (pathname.startsWith("/login") || pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
 
-  // Solo protegemos /app y /admin (ajusta si quieres más)
-  const needsAuth = pathname.startsWith("/app") || pathname.startsWith("/admin");
-  if (needsAuth) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    if (!token) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/login";
-      // opcional: envía a login con callback de regreso
-      url.searchParams.set("callbackUrl", req.nextUrl.pathname + req.nextUrl.search);
-      return NextResponse.redirect(url);
+  // 👇 PASA EL SECRET AQUÍ
+  const token = await getToken({ req, secret: SECRET });
+  const role = (token as any)?.role;
+
+  if (pathname.startsWith("/admin")) {
+    if (!token) return NextResponse.redirect(new URL("/login", req.url));
+    if (role !== "ADMIN") return NextResponse.redirect(new URL("/app", req.url));
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/api/admin")) {
+    if (!token || role !== "ADMIN") {
+      return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
     }
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/app")) {
+    if (!token) return NextResponse.redirect(new URL("/login", req.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // no interceptar estáticos
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/app/:path*", "/admin/:path*", "/api/admin/:path*"],
 };

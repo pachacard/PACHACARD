@@ -14,7 +14,8 @@ function toNumOrNull(v: any) {
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user || (session as any).role !== "ADMIN") {
+  // 👇 usar session.user.role
+  if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 
@@ -52,10 +53,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "La fecha de inicio no puede ser mayor que la de fin." }, { status: 400 });
   }
 
-  // Acepta b.images o b.imageUrl (URL o base64); guarda en Discount.images (string | null)
   const images: string | null = (b.images ?? b.imageUrl ?? "").toString().trim() || null;
 
-  // Validación opcional de negocio
   let businessConnect: Prisma.DiscountCreateInput["business"] | undefined;
   let businessId: string | null = null;
   if (b.businessId) {
@@ -63,16 +62,17 @@ export async function POST(req: Request) {
       where: { id: String(b.businessId) },
       select: { id: true },
     });
-    if (!biz) return NextResponse.json({ ok: false, message: "El negocio seleccionado no existe." }, { status: 400 });
+    if (!biz) {
+      return NextResponse.json({ ok: false, message: "El negocio seleccionado no existe." }, { status: 400 });
+    }
     businessId = biz.id;
     businessConnect = { connect: { id: biz.id } };
   }
 
-  const categoryIds: string[] = Array.isArray(b.categoryIds) ? b.categoryIds : [];
+  const categoryIds: string[] = Array.isArray(b.categoryIds) ? b.categoryIds.map(String) : [];
 
   try {
     const created = await prisma.$transaction(async (tx) => {
-      // Crea el descuento
       const disc = await tx.discount.create({
         data: {
           code,
@@ -86,19 +86,16 @@ export async function POST(req: Request) {
           endAt,
           limitPerUser: toNumOrNull(b.limitPerUser),
           limitTotal: toNumOrNull(b.limitTotal),
-          images, // <- guardamos la imagen/URL aquí
+          images,
           ...(businessConnect ? { business: businessConnect } : {}),
         },
       });
 
-      // Relación N:M Descuento-Categorías
       if (categoryIds.length) {
         await tx.discountCategory.createMany({
           data: categoryIds.map((categoryId) => ({ discountId: disc.id, categoryId })),
-          // NOTA: en SQLite skipDuplicates no está soportado; por eso no lo usamos
         });
 
-        // Si el descuento tiene negocio, "sincroniza" también BusinessCategory
         if (businessId) {
           for (const categoryId of categoryIds) {
             await tx.businessCategory.upsert({

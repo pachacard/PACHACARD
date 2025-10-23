@@ -1,13 +1,17 @@
+// app/page.tsx
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-export default async function Home(){
+export default async function Home() {
   const session = await auth();
-  const role = (session as any)?.role ?? (session as any)?.user?.role ?? "USER";
 
-  if (session?.user) {
-    if (role === "ADMIN") redirect("/admin");
-    redirect("/app");
+  if (!session?.user) {
+    redirect("/login");
   }
-  redirect("/login");
+
+  if (session.user.role === "ADMIN") {
+    redirect("/admin");
+  }
+
+  redirect("/app");
 }

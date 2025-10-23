@@ -14,12 +14,15 @@ function toNumOrNull(v: any) {
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
-  if (!session?.user || (session as any).role !== "ADMIN") {
+  // 👇 El rol está en session.user.role (no en session.role)
+  if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 
   const existing = await prisma.discount.findUnique({ where: { id: params.id } });
-  if (!existing) return NextResponse.json({ ok: false, message: "No encontrado" }, { status: 404 });
+  if (!existing) {
+    return NextResponse.json({ ok: false, message: "No encontrado" }, { status: 404 });
+  }
 
   const b = await req.json();
 
@@ -66,15 +69,16 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       where: { id: String(b.businessId) },
       select: { id: true },
     });
-    if (!biz) return NextResponse.json({ ok: false, message: "El negocio seleccionado no existe." }, { status: 400 });
+    if (!biz) {
+      return NextResponse.json({ ok: false, message: "El negocio seleccionado no existe." }, { status: 400 });
+    }
     businessId = biz.id;
     businessNested = { connect: { id: biz.id } };
   } else if (b.businessId === "" || b.businessId === null) {
-    // Si envías vacío, desconecta el negocio
     businessNested = { disconnect: true };
   }
 
-  const categoryIds: string[] = Array.isArray(b.categoryIds) ? b.categoryIds : [];
+  const categoryIds: string[] = Array.isArray(b.categoryIds) ? b.categoryIds.map(String) : [];
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -130,7 +134,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
-  if (!session?.user || (session as any).role !== "ADMIN") {
+  if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 

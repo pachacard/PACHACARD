@@ -1,3 +1,4 @@
+// app/admin/users/page.tsx
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -13,9 +14,10 @@ function one(v?: string | string[]) {
 }
 
 export default async function AdminUsersPage({ searchParams }: Search) {
-  // Solo ADMIN
+  // ✅ Solo ADMIN (usa session.user.role)
   const session = await auth();
-  if (!session?.user || (session as any).role !== "ADMIN") redirect("/");
+  if (!session?.user) redirect("/login");
+  if (session.user.role !== "ADMIN") redirect("/app");
 
   // Filtros
   const q = (one(searchParams?.q) || "").trim();
@@ -23,12 +25,12 @@ export default async function AdminUsersPage({ searchParams }: Search) {
   const status = one(searchParams?.status) || "";
   const role = one(searchParams?.role) || "";
 
-  // ...
+  // Where dinámico
   const where: any = {};
   if (q) {
     where.OR = [
-      { name:  { contains: q } },    // sin mode
-      { email: { contains: q } },    // sin mode
+      { name:  { contains: q, mode: "insensitive" } },
+      { email: { contains: q, mode: "insensitive" } },
     ];
   }
   if (tier)   where.tier   = tier;
@@ -38,6 +40,15 @@ export default async function AdminUsersPage({ searchParams }: Search) {
   const items = await prisma.user.findMany({
     where,
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      tier: true,
+      status: true,
+      createdAt: true,
+    },
   });
 
   return (

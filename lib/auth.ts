@@ -1,22 +1,59 @@
-// lib/auth.ts
-import NextAuth, { NextAuthOptions } from "next-auth";
+// ======================================================
+// 📁 lib/auth.ts — NextAuth v5 con augmentations correctas
+// ======================================================
+
+import NextAuth, { type DefaultSession, type User as NextAuthUser } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import type { JWT } from "next-auth/jwt";
 
-function normalizeTier(t: any): "BASIC" | "NORMAL" | "PREMIUM" {
-  const k = String(t ?? "").trim().toUpperCase();
-  if (k === "BASIC" || k === "NORMAL" || k === "PREMIUM") return k as any;
-  return "BASIC";
+// ======================================================
+// 🔧 EXTENSIÓN DE TIPOS (sin referencias circulares)
+// ======================================================
+
+declare module "next-auth" {
+  // Extiende el tipo User que retornas en `authorize`
+  interface User {
+    id: string;
+    role: "ADMIN" | "USER";
+    tier: "BASIC" | "NORMAL" | "PREMIUM";
+  }
+
+  // Extiende la Session usando DefaultSession (evita ciclo)
+  interface Session extends DefaultSession {
+    user: DefaultSession["user"] & {
+      id: string;
+      role: "ADMIN" | "USER";
+      tier: "BASIC" | "NORMAL" | "PREMIUM";
+    };
+  }
 }
 
-export const {
-  auth,
-  signIn,
-  signOut,
-  handlers: { GET, POST },
-} = NextAuth({
-  secret: process.env.NEXTAUTH_SECRET,
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    role?: "ADMIN" | "USER";
+    tier?: "BASIC" | "NORMAL" | "PREMIUM";
+  }
+}
+
+// ======================================================
+// 🧩 UTIL
+// ======================================================
+function normalizeTier(t: unknown): "BASIC" | "NORMAL" | "PREMIUM" {
+  const k = String(t ?? "").trim().toUpperCase();
+  return k === "BASIC" || k === "NORMAL" || k === "PREMIUM" ? (k as any) : "BASIC";
+}
+
+// ======================================================
+// ⚙️ CONFIG — Tipo a prueba de versión
+// ======================================================
+type AuthConfigInferred = Parameters<typeof NextAuth>[0];
+
+export const authConfig: AuthConfigInferred = {
+  // Usa el mismo secreto que el middleware
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   trustHost: true,
   session: { strategy: "jwt" },
 
@@ -39,13 +76,14 @@ export const {
         const ok = await bcrypt.compare(pass, user.passwordHash);
         if (!ok || user.status !== "ACTIVE") return null;
 
+        // Retorna un User que ya incluye role/tier
         return {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role,
+          role: (user.role as "ADMIN" | "USER") ?? "USER",
           tier: normalizeTier(user.tier),
-        } as any;
+        } satisfies NextAuthUser;
       },
     }),
   ],
@@ -53,27 +91,41 @@ export const {
   pages: { signIn: "/login", error: "/login" },
 
   callbacks: {
-    // Guarda datos en el JWT
-    async jwt({ token, user }) {
+    // Tipado explícito
+    async jwt({ token, user }: { token: JWT; user?: NextAuthUser | null }) {
       if (user) {
-        // asegúrate de que el id quede en el token
-        (token as any).sub = (user as any).id ?? (token as any).sub ?? null;
-        (token as any).role = (user as any).role || "USER";
-        (token as any).tier = normalizeTier((user as any).tier);
+        token.sub = user.id; // ✅ asegura que session pueda leerlo
+        token.id = user.id;
+        token.role = (user as any).role ?? "USER";
+        token.tier = (user as any).tier ?? "BASIC";
       }
       return token;
     },
 
-    // Proyecta datos del JWT a la sesión (lo que lee tu app)
-    async session({ session, token, user }) {
-      // inyecta el id en session.user.id (MUY importante para tus consultas)
+    async session({
+      session,
+      token,
+    }: {
+      session: import("next-auth").Session;
+      token: JWT;
+    }) {
       if (session.user) {
-        (session.user as any).id =
-          (token as any).sub ?? (user as any)?.id ?? null;
+        // lee primero de sub; fallback a id
+        session.user.id = (token.sub as string) ?? (token.id as string) ?? "";
+        session.user.role = (token.role as "ADMIN" | "USER") ?? "USER";
+        session.user.tier = (token.tier as "BASIC" | "NORMAL" | "PREMIUM") ?? "BASIC";
       }
-      (session as any).role = (token as any).role || "USER";
-      (session as any).tier = normalizeTier((token as any).tier);
       return session;
     },
   },
-} as NextAuthOptions);
+};
+
+// ======================================================
+// 🚀 EXPORTS v5 (App Router)
+// ======================================================
+export const {
+  auth,
+  signIn,
+  signOut,
+  handlers: { GET, POST },
+} = NextAuth(authConfig);

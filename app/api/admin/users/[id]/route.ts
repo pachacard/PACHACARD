@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
-  if (!session?.user || (session as any).role !== "ADMIN") {
+   if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ ok: false }, { status: 403 });
   }
 
@@ -45,7 +45,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
-  if (!session?.user || (session as any).role !== "ADMIN") {
+  if (!session?.user ||session.user.role !== "ADMIN"){
     return NextResponse.json({ ok: false }, { status: 403 });
   }
 

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import * as jose from "jose";
 import QRCode from "qrcode";
 import { redirect } from "next/navigation";
+import SignOutButton from "@/app/_components/SignOutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -12,14 +13,14 @@ async function buildStableQr(user: any) {
 
   const createdAt = new Date(user.createdAt ?? Date.now());
   const iatSec = Math.floor(createdAt.getTime() / 1000);
-  const expSec = iatSec + 60 * 60 * 24 * 365; // 1 año desde el alta (estable)
+  const expSec = iatSec + 60 * 60 * 24 * 365; // 1 año desde el alta
 
   const jwt = await new jose.SignJWT({ tier: user.tier })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(user.id))
-    .setJti(String(user.tokenVersion ?? 1)) // rotación => invalida QR viejo
-    .setIssuedAt(iatSec)                    // iat fijo
-    .setExpirationTime(expSec)              // exp fijo
+    .setJti(String(user.tokenVersion ?? 1))
+    .setIssuedAt(iatSec)
+    .setExpirationTime(expSec)
     .sign(secret);
 
   const base =
@@ -32,7 +33,6 @@ async function buildStableQr(user: any) {
   return { url, dataUrl };
 }
 
-/** Pills bonitas para Tier/Estado */
 function TierChip({ tier }: { tier: string }) {
   const map: Record<string, string> = {
     BASIC: "bg-slate-100 text-slate-700 border border-slate-200",
@@ -69,13 +69,11 @@ export default async function MePage() {
   });
   if (!user) redirect("/login");
 
-  // QR estable (no cambia al refrescar)
   const qr = await buildStableQr(user);
-  const year = new Date().getFullYear();
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Mi información</h1>
+      <h1 className="text-xl md:text-2xl font-semibold">Mi información</h1>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* PERFIL */}
@@ -116,7 +114,7 @@ export default async function MePage() {
           </div>
         </div>
 
-        {/* MI QR (sin mostrar el enlace ni acciones) */}
+        {/* MI QR */}
         <div className="card">
           <div className="card-body">
             <h2 className="card-title">Mi QR</h2>
@@ -142,11 +140,16 @@ export default async function MePage() {
                 <p className="text-xs text-slate-500 mt-3">
                   Por seguridad, el enlace del canje no se muestra aquí.
                 </p>
+
+                {/* Botón Salir: SOLO en mobile */}
+                <div className="md:hidden">
+                  <SignOutButton />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </div>      
     </div>
   );
 }

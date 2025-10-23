@@ -1,9 +1,25 @@
+// app/api/qr/token/[userId]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { signQrToken } from "@/lib/token";
-export async function GET(_:Request,{params}:{params:{userId:string}}){
-  const user=await prisma.user.findUnique({ where:{ id:params.userId } });
-  if(!user) return NextResponse.json({ ok:false, message:"No existe el usuario" }, { status:404 });
-  const token=await signQrToken({ sub:user.id, tier:user.tier, tv:user.tokenVersion });
-  return NextResponse.json({ ok:true, token });
+import { makeCardToken } from "@/lib/token"; // ✅ usa el nombre correcto
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET(
+  _req: Request,
+  { params }: { params: { userId: string } }
+) {
+  const userId = params?.userId;
+  if (!userId)
+    return NextResponse.json({ ok: false, message: "Falta userId" }, { status: 400 });
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user)
+    return NextResponse.json({ ok: false, message: "No existe el usuario" }, { status: 404 });
+
+  // ✅ usa makeCardToken
+  const token = await makeCardToken(user.id);
+
+  return NextResponse.json({ ok: true, token });
 }
