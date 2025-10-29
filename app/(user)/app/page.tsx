@@ -1,6 +1,7 @@
 // app/(user)/app/page.tsx
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";            // ← NUEVO
 import {
   getCategoriesWithCountsForUser,
   getDiscountsByCategorySlugForUser,
@@ -17,11 +18,9 @@ type Props = { searchParams?: { cat?: string; q?: string } };
 
 /** Resuelve el Tier con buen fallback (session -> id -> email) */
 async function resolveTier(session: any): Promise<Tier | undefined> {
-  // 1) directo desde la sesión
   const fromSession = session?.user?.tier as Tier | undefined;
   if (fromSession) return fromSession;
 
-  // 2) buscar por id
   const idFromSession = session?.user?.id ?? null;
   if (idFromSession) {
     const me = await prisma.user.findUnique({
@@ -31,7 +30,6 @@ async function resolveTier(session: any): Promise<Tier | undefined> {
     if (me?.tier) return me.tier as Tier;
   }
 
-  // 3) buscar por email
   if (session?.user?.email) {
     const meByEmail = await prisma.user.findUnique({
       where: { email: session.user.email.toLowerCase() },
@@ -43,7 +41,6 @@ async function resolveTier(session: any): Promise<Tier | undefined> {
   return undefined;
 }
 
-/** Filtro simple en memoria (sin tocar tus helpers) */
 function filterByQuery(discounts: any[], q?: string) {
   if (!q) return discounts;
   const needle = q.trim().toLowerCase();
@@ -66,6 +63,11 @@ function filterByQuery(discounts: any[], q?: string) {
 export default async function Page({ searchParams }: Props) {
   const session = await auth();
 
+  // ⛔️ Si es ADMIN, no debe ver /app → envíalo a /admin
+  if (session?.user?.role === "ADMIN") {
+    redirect("/admin");
+  }
+
   if (!session?.user) {
     return (
       <div className="container-app py-10 text-sm text-slate-600">
@@ -74,20 +76,15 @@ export default async function Page({ searchParams }: Props) {
     );
   }
 
-  // 1) tier del usuario
   const tier = await resolveTier(session);
-
-  // 2) filtros desde URL
   const currentCat = searchParams?.cat || undefined;
   const query = searchParams?.q || undefined;
 
-  // 3) fetch paralelo: categorías + descuentos (según tier + categoría)
   const [cats, discountsRaw] = await Promise.all([
     getCategoriesWithCountsForUser(tier),
     getDiscountsByCategorySlugForUser(currentCat, tier),
   ]);
 
-  // 4) filtro opcional por ?q= (en memoria)
   const discounts = filterByQuery(discountsRaw, query);
 
   return (
@@ -123,11 +120,9 @@ export default async function Page({ searchParams }: Props) {
           </section>
         )}
 
-        {/* espacio para la BottomNav móvil */}
         <div className="h-20 md:hidden" />
       </div>
 
-      {/* Barra inferior fija (móvil) */}
       <BottomNav />
     </>
   );
