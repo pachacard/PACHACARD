@@ -11,7 +11,7 @@ export type Biz = {
   address?: string | null;
   contact?: string | null;
   status: "ACTIVE" | "INACTIVE";
-  imageUrl?: string | null;
+  imageUrl?: string | null; // URL remota o data URL
 };
 
 export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
@@ -27,7 +27,7 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
   });
 
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [readingFile, setReadingFile] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   function sanitizeCode(v: string) {
@@ -35,13 +35,51 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
     return v.replace(/\s+/g, "").toUpperCase();
   }
 
+  /** Lee un archivo local y lo convierte a data URL (base64). */
+  function fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Solo se permiten imágenes.");
+      e.currentTarget.value = "";
+      return;
+    }
+
+    // Límite de tamaño razonable para no inflar la BD
+    const MAX_BYTES = 450 * 1024; // ~450KB
+    if (file.size > MAX_BYTES) {
+      alert("La imagen es muy grande. Usa una de menor tamaño (~450KB máx.) o sube la imagen a un hosting (Cloudinary/S3) y pega la URL.");
+      e.currentTarget.value = "";
+      return;
+    }
+
+    setReadingFile(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setF((p) => ({ ...p, imageUrl: dataUrl }));
+    } catch (err: any) {
+      alert(err?.message || "No se pudo procesar la imagen");
+    } finally {
+      setReadingFile(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   async function save() {
     setSaving(true);
     try {
       const isNew = !f.id;
-      const url = isNew
-        ? "/api/admin/businesses"
-        : `/api/admin/businesses/${f.id}`;
+      const url = isNew ? "/api/admin/businesses" : `/api/admin/businesses/${f.id}`;
       const method = isNew ? "POST" : "PUT";
 
       // Validaciones rápidas
@@ -52,12 +90,14 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
       }
 
       const body = {
-        ...f,
         code: sanitizeCode(f.code),
+        name: f.name.trim(),
         ruc: f.ruc?.trim() || null,
         address: f.address?.trim() || null,
         contact: f.contact?.trim() || null,
-        imageUrl: f.imageUrl?.trim() || null,
+        status: f.status ?? "ACTIVE",
+        // CLAVE: guardamos directamente el string (URL o data:)
+        imageUrl: (f.imageUrl ?? "").toString().trim() || null,
       };
 
       const r = await fetch(url, {
@@ -65,37 +105,17 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (r.ok) location.href = "/admin/businesses";
-      else {
-        const t = await r.text().catch(() => "");
-        alert("Error al guardar. " + (t || ""));
+
+      const json = await r.json().catch(() => ({} as any));
+      if (!r.ok || json?.ok === false) {
+        throw new Error(json?.message || "Error al guardar");
       }
+
+      location.href = "/admin/businesses";
+    } catch (err: any) {
+      alert(err?.message || "Error al guardar");
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      alert("Solo se permiten imágenes.");
-      return;
-    }
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const json = await res.json();
-      if (json.ok) {
-        setF((p) => ({ ...p, imageUrl: json.url }));
-      } else {
-        alert(json.error || "Error al subir la imagen");
-      }
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
@@ -173,33 +193,40 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
               value={f.address ?? ""}
               onChange={(e) => setF({ ...f, address: e.target.value })}
             />
-            <p className="help">
-              Se muestra de referencia en el detalle del negocio.
-            </p>
+            <p className="help">Se muestra de referencia en el detalle del negocio.</p>
           </div>
 
-          {/* Logo: URL + subida */}
+          {/* Logo: URL + carga local a data URL */}
           <div className="form-grid">
             <div>
-              <label className="label">URL Logo del negocio</label>
-              <div className="flex items-center gap-3">
+              <label className="label">Imagen del negocio</label>
+              <div className="space-y-2">
                 <input
-                  className="input flex-1"
-                  placeholder="https://... o /uploads/archivo.jpg"
+                  className="input w-full"
+                  placeholder="Pega aquí una URL (Cloudinary/S3/https...) o usa 'Cargar archivo' para convertir a data URL"
                   value={f.imageUrl ?? ""}
                   onChange={(e) => setF({ ...f, imageUrl: e.target.value })}
                 />
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                />
+
+                <div className="flex items-center gap-3">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    disabled={readingFile}
+                  />
+                  {readingFile && (
+                    <span className="text-xs text-slate-500">Procesando imagen…</span>
+                  )}
+                </div>
+
+                <p className="help">
+                  En Vercel no existe /uploads de escritura. Pega una URL remota o
+                  carga un archivo (se convierte a <code>data:</code> URL y se guarda
+                  inline). Mantén las imágenes ligeras (&lt; 450KB).
+                </p>
               </div>
-              <p className="help">
-                Puedes pegar una URL externa o subir un archivo. Si subes, se
-                guardará en <code>/uploads</code>.
-              </p>
             </div>
 
             <div>
@@ -209,9 +236,10 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
                   <img
                     src={f.imageUrl}
                     alt="preview"
-                    className="h-12 w-12 rounded-xl object-cover border"
+                    className="h-20 w-20 rounded-xl object-cover border bg-white"
+                    onError={(e) => (e.currentTarget.style.opacity = "0.3")}
                   />
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2">
                     <button
                       type="button"
                       className="btn btn-outline"
@@ -219,13 +247,10 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
                     >
                       Quitar
                     </button>
-                    {uploading && (
-                      <span className="text-xs text-slate-500">Subiendo…</span>
-                    )}
                   </div>
                 </>
               ) : (
-                <div className="h-12 w-12 rounded-xl bg-slate-200 grid place-content-center text-xs text-slate-500">
+                <div className="h-20 w-20 rounded-xl bg-slate-200 grid place-content-center text-xs text-slate-500">
                   sin img
                 </div>
               )}
@@ -254,11 +279,10 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={saving || uploading}
+              disabled={saving || readingFile}
             >
               {saving ? "Guardando..." : "Guardar"}
             </button>
-            
           </div>
         </form>
       </div>
