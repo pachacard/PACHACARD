@@ -42,9 +42,17 @@ export default function PachaHeader() {
   if (hideAll) return null;
 
   function isActive(href: string) {
-    if (href === "/app") return pathname === "/app" || pathname.startsWith("/app/");
-    return pathname.startsWith(href);
+    // normaliza para evitar dobles barras finales
+    const p = (pathname || "/").replace(/\/+$/, "");
+    const h = href.replace(/\/+$/, "");
+
+    // Para /app solo cuenta si estás exactamente en /app
+    if (h === "/app") return p === "/app";
+
+    // Para otras rutas: coincide exacto o como prefijo con “/”
+    return p === h || p.startsWith(h + "/");
   }
+
 
   async function doSignOut() {
     await fetch("/api/auth/csrf", { cache: "no-store" }).catch(() => {});
