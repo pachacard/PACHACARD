@@ -11,7 +11,7 @@ export async function POST(req: Request) {
       address: b.address ?? "",
       contact: b.contact ?? "",
       status: b.status ?? "ACTIVE",
-      imageUrl: b.imageUrl ?? "",   // <--- nuevo
+      imageUrl: b.imageUrl ?? "",   
     },
   });
   return NextResponse.json({ ok: true, id: created.id });

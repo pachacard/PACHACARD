@@ -2,8 +2,10 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+
+export const dynamic = "force-dynamic";
 
 /* Icons */
 function Eye(props: React.SVGProps<SVGSVGElement>) {
@@ -67,15 +69,22 @@ function BrandBackground() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const search = useSearchParams();
+
+  // Soporte de error que viene en ?error=... (p.ej., credenciales inválidas)
   const errParam = search?.get("error");
   const shouldShowError =
     errParam && errParam !== "MissingCSRF" && errParam !== "SessionRequired";
+
+  // Si llegan con callbackUrl la respetamos; por defecto /app
+  const callbackUrl = search?.get("callbackUrl") || "/app";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [localErr, setLocalErr] = useState("");
 
   // animación de entrada
   const [ready, setReady] = useState(false);
@@ -86,22 +95,35 @@ export default function LoginPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLocalErr("");
     setSubmitting(true);
     try {
+      // Opcional: precargar CSRF (evita edge cases)
       await fetch("/api/auth/csrf", { cache: "no-store" }).catch(() => {});
-      await signIn("credentials", {
+
+      // No dejamos que NextAuth redirija (controlamos nosotros)
+      const res = await signIn("credentials", {
         email,
         password,
-        redirect: true,
-        callbackUrl: "/",
+        redirect: false,
       });
+
+      if (res?.error) {
+        setLocalErr("Credenciales inválidas o usuario inactivo.");
+        return;
+      }
+
+      // Redirige a callbackUrl /app y refresca para que la sesión se pinte
+      router.replace(callbackUrl);
+      router.refresh();
+    } catch {
+      setLocalErr("Ocurrió un error al iniciar sesión. Inténtalo de nuevo.");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    // full-bleed: ignora cualquier padding del layout padre
     <div className="fixed inset-0 overflow-auto">
       <div className="relative min-h-full">
         <BrandBackground />
@@ -131,9 +153,9 @@ export default function LoginPage() {
                   </p>
                 </div>
 
-                {shouldShowError && (
+                {(shouldShowError || localErr) && (
                   <div className="mb-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    No pudimos iniciar sesión. Verifica tus datos e inténtalo otra vez.
+                    {localErr || "No pudimos iniciar sesión. Verifica tus datos e inténtalo otra vez."}
                   </div>
                 )}
 
@@ -227,7 +249,6 @@ export default function LoginPage() {
                   </ul>
                 </div>
 
-                {/* (Quité el pie local para evitar el duplicado del © si tu layout ya lo incluye) */}
               </div>
             </div>
           </div>
