@@ -1,13 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      'encrypted-tbn0.gstatic.com',   // si vas a permitir ese host
-      'images.unsplash.com',
-      'res.cloudinary.com',
+    // 🔁 Reemplaza la opción deprecated "domains"
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "encrypted-tbn0.gstatic.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
     ],
-    // O remotePatterns si prefieres:
-    // remotePatterns: [{ protocol: 'https', hostname: 'encrypted-tbn0.gstatic.com' }],
   },
 };
 
