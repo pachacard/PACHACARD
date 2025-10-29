@@ -32,12 +32,14 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
   const isNew = !!(startAt && now.getTime() - startAt.getTime() <= 7 * MS_DAY);
   const expiringSoon = !!(endAt && endAt.getTime() - now.getTime() <= 3 * MS_DAY && endAt.getTime() >= now.getTime());
   const soldOut = !!(d?.limitTotal && (d.usedTotal ?? 0) >= (d.limitTotal ?? 0));
+  const isUpcoming = !!(d?.status === "pronto" || (startAt && startAt > now));
 
+  // Estado unificado (sin mezclar "expiringSoon" para no duplicar mensajes)
   const status = useMemo(() => {
     if (soldOut) return { text: "agotado", cls: "bg-rose-100 text-rose-700 border border-rose-200" };
-    if (d?.status === "pronto" || expiringSoon) return { text: "pronto", cls: "bg-amber-100 text-amber-700 border border-amber-200" };
+    if (isUpcoming) return { text: "pronto", cls: "bg-amber-100 text-amber-700 border border-amber-200" };
     return { text: "disponible", cls: "bg-emerald-100 text-emerald-700 border border-emerald-200" };
-  }, [soldOut, expiringSoon, d?.status]);
+  }, [soldOut, isUpcoming]);
 
   const hero =
     (Array.isArray(d?.images) ? d.images[0] : d?.images) ||
@@ -48,7 +50,6 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
   async function copyCode() {
     if (!d?.code) return;
     await navigator.clipboard.writeText(d.code);
-    // vibración sutil en móvil, si está disponible
     if (typeof navigator !== "undefined" && "vibrate" in navigator) (navigator as any).vibrate?.(35);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
@@ -60,38 +61,49 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
                  hover:shadow-md hover:ring-[var(--brand,#7e1515)]/40"
       aria-label={d?.title ?? "Descuento"}
     >
-      {/* Imagen */}
+      {/* Imagen (altura consistente) */}
       <div className={["relative w-full border-b bg-white", soldOut ? "grayscale opacity-95" : ""].join(" ")}>
         <div className="relative w-full aspect-[4/3]">
           {isExternal ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={String(hero)} alt={d?.business?.name ?? "Negocio"}
-                 className="absolute inset-0 h-full w-full object-contain p-4" />
+            <img
+              src={String(hero)}
+              alt={d?.business?.name ?? "Negocio"}
+              className="absolute inset-0 h-full w-full object-contain p-4"
+              loading="lazy"
+            />
           ) : (
-            <Image src={String(hero)} alt={d?.business?.name ?? "Negocio"}
-                   fill sizes="(max-width:768px) 100vw, 33vw"
-                   className="object-contain p-4" />
+            <Image
+              src={String(hero)}
+              alt={d?.business?.name ?? "Negocio"}
+              fill
+              sizes="(max-width:768px) 100vw, 33vw"
+              className="object-contain p-4"
+              priority={false}
+            />
           )}
         </div>
 
-        {/* Badges izquierda */}
-        <div className="absolute left-3 top-3 flex gap-2">
-          {isNew && !soldOut && (
-            <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700 shadow-sm">
-              nuevo
+        {/* BANDA SUPERIOR: izquierda (chips) + derecha (estado) */}
+        {(isNew || expiringSoon || status) && (
+          <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-2">
+            <div className="flex gap-2">
+              {isNew && !soldOut && (
+                <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700 shadow-sm">
+                  nuevo
+                </span>
+              )}
+              {expiringSoon && !soldOut && (
+                <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 shadow-sm">
+                  pronto expira
+                </span>
+              )}
+            </div>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium shadow-sm ${status.cls}`}>
+              {status.text}
             </span>
-          )}
-          {expiringSoon && !soldOut && (
-            <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 shadow-sm">
-              pronto expira
-            </span>
-          )}
-        </div>
-
-        {/* Estado derecha */}
-        <span className={`absolute right-3 top-3 rounded-full px-2 py-0.5 text-xs font-medium shadow-sm ${status.cls}`}>
-          {status.text}
-        </span>
+          </div>
+        )}
       </div>
 
       {/* Contenido */}
@@ -131,7 +143,9 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
 
         {/* Negocio y categoría */}
         <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
-          <p className="truncate">{d?.business?.name ? `Negocio: ${d.business.name}` : "—"}</p>
+          <p className="truncate">
+            {d?.business?.name ? `Negocio: ${d.business.name}` : "—"}
+          </p>
           {d?.business?.category && (
             <span className="ml-2 shrink-0 rounded-full bg-slate-50 px-2 py-0.5 text-[11px] ring-1 ring-slate-200">
               {d.business.category}
