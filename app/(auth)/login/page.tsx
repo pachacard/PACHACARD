@@ -1,11 +1,12 @@
 // app/(auth)/login/page.tsx
 "use client";
 
+export const dynamic = "force-dynamic";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export const dynamic = "force-dynamic";
+
 
 /* Icons */
 function Eye(props: React.SVGProps<SVGSVGElement>) {

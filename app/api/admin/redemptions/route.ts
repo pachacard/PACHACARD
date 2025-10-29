@@ -9,6 +9,7 @@ import type {
   Business,
   Prisma,
 } from "@prisma/client";
+export const dynamic = "force-dynamic";
 
 // Fila con includes tipados
 type Row = Redemption & {
