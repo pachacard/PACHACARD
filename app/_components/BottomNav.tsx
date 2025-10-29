@@ -4,11 +4,39 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Home, Clock, IdCard, Store } from "lucide-react";
 
-const items = [
-  { href: "/app", label: "Inicio", Icon: Home },
-  { href: "/app/businesses", label: "Negocios", Icon: Store },
-  { href: "/app/history", label: "Historial", Icon: Clock },
-  { href: "/app/me", label: "Mi QR", Icon: IdCard },
+type Item = {
+  href: string;
+  label: string;
+  Icon: any;
+  isActive: (pathname: string) => boolean;
+};
+
+const items: Item[] = [
+  // Inicio activo solo en /app y /app/discounts/*
+  {
+    href: "/app",
+    label: "Inicio",
+    Icon: Home,
+    isActive: (p) => p === "/app" || p.startsWith("/app/discounts"),
+  },
+  {
+    href: "/app/businesses",
+    label: "Negocios",
+    Icon: Store,
+    isActive: (p) => p.startsWith("/app/businesses"),
+  },
+  {
+    href: "/app/history",
+    label: "Historial",
+    Icon: Clock,
+    isActive: (p) => p.startsWith("/app/history"),
+  },
+  {
+    href: "/app/me",
+    label: "Mi QR",
+    Icon: IdCard,
+    isActive: (p) => p.startsWith("/app/me"),
+  },
 ];
 
 export default function BottomNav() {
@@ -25,11 +53,8 @@ export default function BottomNav() {
       aria-label="Navegación inferior"
     >
       <ul className="mx-auto flex max-w-3xl items-stretch justify-around py-2">
-        {items.map(({ href, label, Icon }) => {
-          const active =
-            href === "/app"
-              ? pathname === "/app" || pathname.startsWith("/app/")
-              : pathname.startsWith(href);
+        {items.map(({ href, label, Icon, isActive }) => {
+          const active = isActive(pathname);
           return (
             <li key={href}>
               <Link
