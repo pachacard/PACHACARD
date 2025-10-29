@@ -1,40 +1,48 @@
+// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
-
 export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-
-  if (pathname.startsWith("/login") || pathname.startsWith("/api/auth")) {
+  const { pathname, search } = req.nextUrl;
+  // Nunca interceptar rutas de next-auth ni assets
+  if (
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.match(/\.(?:png|jpg|jpeg|svg|ico|gif|webp|css|js|txt|map)$/)
+  ) {
     return NextResponse.next();
   }
 
-  // 👇 PASA EL SECRET AQUÍ
-  const token = await getToken({ req, secret: SECRET });
-  const role = (token as any)?.role;
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+    // en Vercel es https, usar secureCookie evita lecturas inconsistentes
+    secureCookie: true,
+  });
 
-  if (pathname.startsWith("/admin")) {
-    if (!token) return NextResponse.redirect(new URL("/login", req.url));
-    if (role !== "ADMIN") return NextResponse.redirect(new URL("/app", req.url));
-    return NextResponse.next();
+  // Si NO hay sesión e intenta entrar a zonas privadas → al login con callbackUrl
+  if (!token && (pathname.startsWith("/app") || pathname.startsWith("/admin"))) {
+    const url = new URL("/login", req.url);
+    url.searchParams.set("callbackUrl", pathname + (search || ""));
+    return NextResponse.redirect(url);
   }
 
-  if (pathname.startsWith("/api/admin")) {
-    if (!token || role !== "ADMIN") {
-      return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
-    }
-    return NextResponse.next();
-  }
-
-  if (pathname.startsWith("/app")) {
-    if (!token) return NextResponse.redirect(new URL("/login", req.url));
+  // Si SÍ hay sesión y visita /login → llévalo a /app (o al callbackUrl si viene)
+  if (token && pathname === "/login") {
+    const cb = req.nextUrl.searchParams.get("callbackUrl") || "/app";
+    return NextResponse.redirect(new URL(cb, req.url));
   }
 
   return NextResponse.next();
 }
 
+// Limita el alcance del middleware para evitar bucles
 export const config = {
-  matcher: ["/app/:path*", "/admin/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/login",
+    "/app/:path*",
+    "/admin/:path*",
+  ],
 };
