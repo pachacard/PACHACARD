@@ -122,7 +122,7 @@ export default async function DiscountDetail({
         <div className="card-body space-y-2">
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-semibold">{d.title}</h1>
-            {/* 👇 Antes aquí estaba la badge con el código (d.code). La quitamos. */}
+            {/* 👇 Aquí antes estaba <span className="badge">{d.code}</span> y lo ocultamos para el usuario */}
           </div>
 
           {d.description && <p className="text-gray-700">{d.description}</p>}

@@ -1,19 +1,20 @@
-// app/_components/DiscountCard.tsx
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 type Discount = {
   id: string;
   title?: string;
   description?: string;
   images?: string[] | string | null;
-  code?: string; // lo seguimos recibiendo pero ya no se muestra
+  code?: string;                 // sigue existiendo, pero ya no se muestra
   startAt?: string | Date | null;
   endAt?: string | Date | null;
   limitTotal?: number | null;
   usedTotal?: number | null;
+  limitPerUser?: number | null;  // 👈 se sigue usando para el estado
+  usedByUser?: number | null;    // 👈 lo llenas en /app/page.tsx
   percentage?: number | null;
   business?: {
     name?: string | null;
@@ -25,7 +26,6 @@ type Discount = {
 
 export default function DiscountCard({ discount }: { discount: Discount }) {
   const d = discount;
-  const [/*copied*/, setCopied] = useState(false); // ya no se usa, pero lo dejamos por compatibilidad si luego quieres algo similar
 
   const now = new Date();
   const MS_DAY = 24 * 60 * 60 * 1000;
@@ -46,11 +46,24 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
   );
   const isUpcoming = !!(d?.status === "pronto" || (startAt && startAt > now));
 
+  // 👉 Límite por usuario agotado
+  const limitPerUser = d?.limitPerUser ?? null;
+  const usedByUser = d?.usedByUser ?? 0;
+  const userLimitUsed = !!(
+    limitPerUser != null && usedByUser >= limitPerUser
+  );
+
+  // Estado unificado
   const status = useMemo(() => {
     if (soldOut)
       return {
         text: "agotado",
         cls: "bg-rose-100 text-rose-700 border border-rose-200",
+      };
+    if (userLimitUsed)
+      return {
+        text: "límite usado",
+        cls: "bg-amber-100 text-amber-700 border border-amber-200",
       };
     if (isUpcoming)
       return {
@@ -61,7 +74,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
       text: "disponible",
       cls: "bg-emerald-100 text-emerald-700 border border-emerald-200",
     };
-  }, [soldOut, isUpcoming]);
+  }, [soldOut, userLimitUsed, isUpcoming]);
 
   const hero =
     (Array.isArray(d?.images) ? d.images[0] : d?.images) ||
@@ -69,18 +82,21 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
     "/brand/muni.png";
 
   const isExternal = /^https?:\/\//i.test(String(hero));
+  const isGreyed = soldOut || userLimitUsed;
 
   return (
     <article
-      className="group overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/80 shadow-sm transition
-                 hover:shadow-md hover:ring-[var(--brand,#7e1515)]/40"
+      className={`group overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/80 shadow-sm transition
+                 hover:shadow-md hover:ring-[var(--brand,#7e1515)]/40 ${
+                   isGreyed ? "opacity-80" : ""
+                 }`}
       aria-label={d?.title ?? "Descuento"}
     >
-      {/* Imagen */}
+      {/* Imagen (altura consistente) */}
       <div
         className={[
           "relative w-full border-b bg-white",
-          soldOut ? "grayscale opacity-95" : "",
+          isGreyed ? "grayscale opacity-95" : "",
         ].join(" ")}
       >
         <div className="relative w-full aspect-[4/3]">
@@ -104,16 +120,16 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
           )}
         </div>
 
-        {/* Chips de estado */}
+        {/* BANDA SUPERIOR: izquierda (chips) + derecha (estado) */}
         {(isNew || expiringSoon || status) && (
           <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-2">
             <div className="flex gap-2">
-              {isNew && !soldOut && (
+              {isNew && !soldOut && !userLimitUsed && (
                 <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700 shadow-sm">
                   nuevo
                 </span>
               )}
-              {expiringSoon && !soldOut && (
+              {expiringSoon && !soldOut && !userLimitUsed && (
                 <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 shadow-sm">
                   pronto expira
                 </span>
@@ -148,6 +164,8 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
               </p>
             )}
           </div>
+
+          {/* 👇 Antes aquí estaba el botón de copiar código, se elimina para no mostrarlo al usuario */}
         </div>
 
         {/* Negocio y categoría */}
