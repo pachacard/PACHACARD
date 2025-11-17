@@ -1,7 +1,6 @@
-// app/(user)/app/page.tsx
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";            // ← NUEVO
+import { redirect } from "next/navigation";
 import {
   getCategoriesWithCountsForUser,
   getDiscountsByCategorySlugForUser,
@@ -48,9 +47,9 @@ function filterByQuery(discounts: any[], q?: string) {
 
   return discounts.filter((d) => {
     const title = String(d?.title ?? "").toLowerCase();
-    const desc  = String(d?.description ?? "").toLowerCase();
-    const biz   = String(d?.business?.name ?? "").toLowerCase();
-    const code  = String(d?.code ?? "").toLowerCase();
+    const desc = String(d?.description ?? "").toLowerCase();
+    const biz = String(d?.business?.name ?? "").toLowerCase();
+    const code = String(d?.code ?? "").toLowerCase();
     return (
       title.includes(needle) ||
       desc.includes(needle) ||
@@ -80,12 +79,48 @@ export default async function Page({ searchParams }: Props) {
   const currentCat = searchParams?.cat || undefined;
   const query = searchParams?.q || undefined;
 
+  // 👉 Obtenemos el id real del usuario para poder contar sus canjes
+  let userId: string | null = null;
+  if (session.user.email) {
+    const me = await prisma.user.findUnique({
+      where: { email: String(session.user.email).toLowerCase() },
+      select: { id: true },
+    });
+    if (me) userId = me.id;
+  }
+
+  // Categorías + descuentos visibles para el tier
   const [cats, discountsRaw] = await Promise.all([
     getCategoriesWithCountsForUser(tier),
     getDiscountsByCategorySlugForUser(currentCat, tier),
   ]);
 
-  const discounts = filterByQuery(discountsRaw, query);
+  // 👉 Enriquecemos los descuentos con los canjes de ESTE usuario
+  let discountsWithUsage: any[] = discountsRaw;
+
+  if (userId && discountsRaw.length > 0) {
+    const ids = discountsRaw.map((d: any) => d.id as string);
+
+    const usageRows = await prisma.redemption.groupBy({
+      by: ["discountId"],
+      where: {
+        userId,
+        discountId: { in: ids },
+      },
+      _count: { _all: true },
+    });
+
+    const usageMap = new Map<string, number>(
+      usageRows.map((row) => [row.discountId, row._count._all])
+    );
+
+    discountsWithUsage = discountsRaw.map((d: any) => ({
+      ...d,
+      usedByUser: usageMap.get(d.id) ?? 0,
+    }));
+  }
+
+  const discounts = filterByQuery(discountsWithUsage, query);
 
   return (
     <>
@@ -114,6 +149,7 @@ export default async function Page({ searchParams }: Props) {
           >
             {discounts.map((d: any) => (
               <div key={d.id} className="mx-auto w-full max-w-sm sm:max-w-none">
+                {/* d.usedByUser ya viene calculado */}
                 <DiscountCard discount={d} />
               </div>
             ))}
@@ -132,7 +168,9 @@ function EmptyState({ hasQuery }: { hasQuery: boolean }) {
   return (
     <div className="mx-auto mt-8 max-w-md rounded-xl border bg-white p-8 text-center">
       <p className="font-semibold">
-        {hasQuery ? "No encontramos resultados" : "No hay descuentos en esta categoría"}
+        {hasQuery
+          ? "No encontramos resultados"
+          : "No hay descuentos en esta categoría"}
       </p>
       <p className="mt-1 text-sm text-slate-600">
         {hasQuery
