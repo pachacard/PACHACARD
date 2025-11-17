@@ -1,3 +1,4 @@
+// app/admin/businesses/[id]/page.tsx
 import { prisma } from "@/lib/prisma";
 import BusinessForm, { type Biz } from "../ui";
 
@@ -14,6 +15,7 @@ export default async function Page({ params }: { params: { id: string } }) {
       contact: true,
       status: true,
       imageUrl: true,
+      googleMapsUrl: true, // 👈 NUEVO
     },
   });
 

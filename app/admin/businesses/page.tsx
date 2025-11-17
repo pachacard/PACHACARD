@@ -1,3 +1,4 @@
+
 // app/admin/businesses/page.tsx
 import { prisma } from "@/lib/prisma";
 import type { Business } from "@prisma/client";

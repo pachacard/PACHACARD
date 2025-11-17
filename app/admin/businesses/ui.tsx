@@ -1,3 +1,4 @@
+// app/admin/businesses/ui.tsx
 "use client";
 
 import { useRef, useState } from "react";
@@ -11,7 +12,8 @@ export type Biz = {
   address?: string | null;
   contact?: string | null;
   status: "ACTIVE" | "INACTIVE";
-  imageUrl?: string | null; // URL remota o data URL
+  imageUrl?: string | null;      // URL remota o data URL
+  googleMapsUrl?: string | null; // 👈 NUEVO: URL a Google Maps
 };
 
 export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
@@ -24,6 +26,7 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
     contact: item?.contact ?? "",
     status: (item?.status as any) ?? "ACTIVE",
     imageUrl: item?.imageUrl ?? "",
+    googleMapsUrl: item?.googleMapsUrl ?? "", // 👈 inicializamos
   });
 
   const [saving, setSaving] = useState(false);
@@ -58,7 +61,9 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
     // Límite de tamaño razonable para no inflar la BD
     const MAX_BYTES = 450 * 1024; // ~450KB
     if (file.size > MAX_BYTES) {
-      alert("La imagen es muy grande. Usa una de menor tamaño (~450KB máx.) o sube la imagen a un hosting (Cloudinary/S3) y pega la URL.");
+      alert(
+        "La imagen es muy grande. Usa una de menor tamaño (~450KB máx.) o sube la imagen a un hosting (Cloudinary/S3) y pega la URL."
+      );
       e.currentTarget.value = "";
       return;
     }
@@ -98,6 +103,8 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
         status: f.status ?? "ACTIVE",
         // CLAVE: guardamos directamente el string (URL o data:)
         imageUrl: (f.imageUrl ?? "").toString().trim() || null,
+        // NUEVO: Google Maps URL (o null si está vacío)
+        googleMapsUrl: f.googleMapsUrl?.trim() || null,
       };
 
       const r = await fetch(url, {
@@ -143,7 +150,9 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
                 placeholder="EJ: CAFE"
                 value={f.code}
                 onChange={(e) => setF({ ...f, code: e.target.value })}
-                onBlur={(e) => setF({ ...f, code: sanitizeCode(e.target.value) })}
+                onBlur={(e) =>
+                  setF({ ...f, code: sanitizeCode(e.target.value) })
+                }
                 required
               />
               <p className="help">
@@ -184,16 +193,33 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
             </div>
           </div>
 
-          {/* Dirección */}
-          <div>
-            <label className="label">Dirección</label>
-            <input
-              className="input"
-              placeholder="Av. Principal 123 (opcional)"
-              value={f.address ?? ""}
-              onChange={(e) => setF({ ...f, address: e.target.value })}
-            />
-            <p className="help">Se muestra de referencia en el detalle del negocio.</p>
+          {/* Ubicación: Dirección + Google Maps URL */}
+          <div className="form-grid">
+            <div>
+              <label className="label">Dirección</label>
+              <input
+                className="input"
+                placeholder="Av. Principal 123 (opcional)"
+                value={f.address ?? ""}
+                onChange={(e) => setF({ ...f, address: e.target.value })}
+              />
+              <p className="help">
+                Se muestra de referencia en el detalle del negocio.
+              </p>
+            </div>
+            <div>
+              <label className="label">Google Maps URL</label>
+              <input
+                className="input"
+                placeholder="https://maps.app.goo.gl/..."
+                value={f.googleMapsUrl ?? ""}
+                onChange={(e) => setF({ ...f, googleMapsUrl: e.target.value })}
+              />
+              <p className="help">
+                Pega aquí el enlace de Google Maps del local. Se usa para el
+                botón <strong>“Ver en Google Maps”</strong> en el portal.
+              </p>
+            </div>
           </div>
 
           {/* Logo: URL + carga local a data URL */}
@@ -217,14 +243,16 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
                     disabled={readingFile}
                   />
                   {readingFile && (
-                    <span className="text-xs text-slate-500">Procesando imagen…</span>
+                    <span className="text-xs text-slate-500">
+                      Procesando imagen…
+                    </span>
                   )}
                 </div>
 
                 <p className="help">
-                  En Vercel no existe /uploads de escritura. Pega una URL remota o
-                  carga un archivo (se convierte a <code>data:</code> URL y se guarda
-                  inline). Mantén las imágenes ligeras (&lt; 450KB).
+                  En Vercel no existe /uploads de escritura. Pega una URL remota
+                  o carga un archivo (se convierte a <code>data:</code> URL y se
+                  guarda inline). Mantén las imágenes ligeras (&lt; 450KB).
                 </p>
               </div>
             </div>
@@ -237,7 +265,9 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
                     src={f.imageUrl}
                     alt="preview"
                     className="h-20 w-20 rounded-xl object-cover border bg-white"
-                    onError={(e) => (e.currentTarget.style.opacity = "0.3")}
+                    onError={(e) =>
+                      (e.currentTarget.style.opacity = "0.3")
+                    }
                   />
                   <div className="mt-2">
                     <button
