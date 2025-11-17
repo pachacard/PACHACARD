@@ -1,3 +1,4 @@
+// app/(user)/app/page.tsx
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -95,11 +96,17 @@ export default async function Page({ searchParams }: Props) {
     getDiscountsByCategorySlugForUser(currentCat, tier),
   ]);
 
-  // 👉 Enriquecemos los descuentos con los canjes de ESTE usuario
-  let discountsWithUsage: any[] = discountsRaw;
+  // Base: guardamos índice original para mantener el orden por fecha
+  const baseDiscounts = (discountsRaw as any[]).map((d, index) => ({
+    ...d,
+    _idx: index, // índice original
+  }));
 
-  if (userId && discountsRaw.length > 0) {
-    const ids = discountsRaw.map((d: any) => d.id as string);
+  // 👉 Enriquecemos los descuentos con los canjes de ESTE usuario
+  let discountsWithUsage: any[] = baseDiscounts;
+
+  if (userId && baseDiscounts.length > 0) {
+    const ids = baseDiscounts.map((d: any) => d.id as string);
 
     const usageRows = await prisma.redemption.groupBy({
       by: ["discountId"],
@@ -114,13 +121,42 @@ export default async function Page({ searchParams }: Props) {
       usageRows.map((row) => [row.discountId, row._count._all])
     );
 
-    discountsWithUsage = discountsRaw.map((d: any) => ({
+    discountsWithUsage = baseDiscounts.map((d: any) => ({
       ...d,
       usedByUser: usageMap.get(d.id) ?? 0,
     }));
   }
 
-  const discounts = filterByQuery(discountsWithUsage, query);
+  // Filtro por búsqueda
+  const filtered = filterByQuery(discountsWithUsage, query);
+
+  // 👉 Reordenamos en el front:
+  //    - primero disponibles
+  //    - al final los agotados o con límite usado para este usuario
+  const discounts = filtered.sort((a: any, b: any) => {
+    const limitPerUserA = a.limitPerUser ?? null;
+    const usedByUserA = a.usedByUser ?? 0;
+    const userLimitUsedA =
+      limitPerUserA != null && usedByUserA >= limitPerUserA;
+    const soldOutA =
+      a.limitTotal && (a.usedTotal ?? 0) >= (a.limitTotal ?? 0);
+    const isOutA = userLimitUsedA || soldOutA;
+
+    const limitPerUserB = b.limitPerUser ?? null;
+    const usedByUserB = b.usedByUser ?? 0;
+    const userLimitUsedB =
+      limitPerUserB != null && usedByUserB >= limitPerUserB;
+    const soldOutB =
+      b.limitTotal && (b.usedTotal ?? 0) >= (b.limitTotal ?? 0);
+    const isOutB = userLimitUsedB || soldOutB;
+
+    if (isOutA === isOutB) {
+      // mismo estado (ambos disponibles o ambos agotados) → respetar orden original
+      return (a._idx ?? 0) - (b._idx ?? 0);
+    }
+    // los agotados / límite usado al final
+    return isOutA ? 1 : -1;
+  });
 
   return (
     <>
@@ -149,7 +185,6 @@ export default async function Page({ searchParams }: Props) {
           >
             {discounts.map((d: any) => (
               <div key={d.id} className="mx-auto w-full max-w-sm sm:max-w-none">
-                {/* d.usedByUser ya viene calculado */}
                 <DiscountCard discount={d} />
               </div>
             ))}
