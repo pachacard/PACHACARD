@@ -32,6 +32,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // ✅ Si es ADMIN y entra a /app, mándalo directo a /admin
+  if (token && pathname.startsWith("/app") && role === "ADMIN") {
+    return NextResponse.redirect(new URL("/admin", req.url));
+  }
+
   // 🔒 /admin requiere ADMIN
   if (token && pathname.startsWith("/admin") && role !== "ADMIN") {
     // si no es admin, mándalo a /app
