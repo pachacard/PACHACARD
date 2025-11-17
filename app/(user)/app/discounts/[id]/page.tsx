@@ -30,17 +30,9 @@ export default async function DiscountDetail({
     });
 
     if (me) {
-      // cuenta de canjes de ESTE usuario para ESTE descuento
       mine = await prisma.redemption.count({
         where: { userId: me.id, discountId: d.id },
       });
-      // Alternativa con groupBy (equivalente):
-      // const rows = await prisma.redemption.groupBy({
-      //   by: ["discountId"],
-      //   where: { userId: me.id, discountId: d.id },
-      //   _count: { _all: true },
-      // });
-      // mine = rows[0]?._count._all ?? 0;
     }
   }
 
@@ -77,9 +69,9 @@ export default async function DiscountDetail({
       : null;
 
   // Imagen
-    const fromDiscount = Array.isArray(d.images) ? d.images[0] : d.images;
-    const src = fromDiscount || d.business?.imageUrl || "";
-    const isExternal = /^https?:\/\//i.test(src);
+  const fromDiscount = Array.isArray(d.images) ? d.images[0] : d.images;
+  const src = fromDiscount || d.business?.imageUrl || "";
+  const isExternal = /^https?:\/\//i.test(src);
 
   return (
     <div className="container-app py-6 space-y-6">
@@ -130,7 +122,7 @@ export default async function DiscountDetail({
         <div className="card-body space-y-2">
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-semibold">{d.title}</h1>
-            <span className="badge">{d.code}</span>
+            {/* 👇 Antes aquí estaba la badge con el código (d.code). La quitamos. */}
           </div>
 
           {d.description && <p className="text-gray-700">{d.description}</p>}
@@ -202,16 +194,18 @@ export default async function DiscountDetail({
           <h2 className="font-medium">Instrucciones de uso</h2>
           <ul className="mt-2 list-disc pl-5 text-sm text-gray-700 space-y-1">
             <li>
-              Presenta tu <strong>tarjeta física</strong> y permite escanear el QR.
+              Presenta tu <strong>tarjeta física</strong> y permite escanear el
+              QR.
             </li>
             <li>
-              El módulo de canje se abrirá automáticamente con tu token verificado.
+              El módulo de canje se abrirá automáticamente con tu token
+              verificado.
             </li>
             <li>Respeta las condiciones y vigencia del comercio.</li>
           </ul>
           <p className="text-xs text-gray-500 mt-3">
-            No hay canje desde el portal web; el acceso es únicamente desde el QR
-            de la tarjeta.
+            No hay canje desde el portal web; el acceso es únicamente desde el
+            QR de la tarjeta.
           </p>
         </div>
       </div>
