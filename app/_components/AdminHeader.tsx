@@ -8,8 +8,17 @@ export default function AdminHeader() {
   const pathname = usePathname() || "/";
   const [open, setOpen] = useState(false);
 
+  const isActive = (href: string) => {
+    if (href === "/admin") {
+      // Resumen solo activo en /admin exactamente
+      return pathname === "/admin";
+    }
+    // Para las demás secciones sí vale el prefijo
+    return pathname === href || pathname.startsWith(href + "/");
+  };
+
   const link = (href: string, label: string) => {
-    const active = pathname === href || pathname.startsWith(href + "/");
+    const active = isActive(href);
     return (
       <a
         href={href}
