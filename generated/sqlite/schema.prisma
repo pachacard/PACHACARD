@@ -35,7 +35,7 @@ model Business {
 
   // Logo/imagen del negocio (opcional)
   imageUrl String?
-  googleMapsUrl String?
+  
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
