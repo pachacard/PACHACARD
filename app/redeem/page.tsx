@@ -13,6 +13,8 @@ type DiscountOption = {
   code: string;
   label: string;
   description?: string | null;
+  limitPerUser?: number | null;
+  remaining?: number | null;
 };
 
 export default function Redeem() {
@@ -27,6 +29,12 @@ export default function Redeem() {
   const [m, setM] = useState<string | null>(null);
   const [ok, setOk] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Para evitar doble canje accidental del mismo código
+  const [lastRedeem, setLastRedeem] = useState<{
+    businessCode: string;
+    discountCode: string;
+  } | null>(null);
 
   useEffect(() => {
     const token = new URL(location.href).searchParams.get("token");
@@ -58,14 +66,29 @@ export default function Redeem() {
 
   const tokenOk = !!inspect?.ok;
 
-  async function loadOptions() {
-    if (!t) return;
-    if (!businessCode.trim()) {
-      setM("Ingresa el código de negocio para buscar descuentos.");
-      setOk(false);
+  // Carga automática de descuentos cuando cambia el código de negocio
+  useEffect(() => {
+    if (!t || !tokenOk) return;
+
+    const codeTrim = businessCode.trim().toUpperCase();
+
+    if (!codeTrim) {
+      setDiscounts([]);
+      setD("");
+      setM(null);
+      setOk(null);
       return;
     }
 
+    const handle = setTimeout(() => {
+      void loadOptions(t, codeTrim);
+    }, 500); // medio segundo de espera después de dejar de tipear
+
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessCode, t, tokenOk]);
+
+  async function loadOptions(token: string, code: string) {
     setLoadingOptions(true);
     setM(null);
     setOk(null);
@@ -74,8 +97,8 @@ export default function Redeem() {
 
     try {
       const url = `/api/redeem/options?token=${encodeURIComponent(
-        t
-      )}&businessCode=${encodeURIComponent(businessCode.trim())}`;
+        token
+      )}&businessCode=${encodeURIComponent(code)}`;
 
       const r = await fetch(url);
       const j = await r.json();
@@ -91,7 +114,7 @@ export default function Redeem() {
         setM("No hay descuentos disponibles para este negocio.");
         setOk(false);
       }
-    } catch (e) {
+    } catch {
       setM("Error al cargar los descuentos.");
       setOk(false);
     } finally {
@@ -101,7 +124,10 @@ export default function Redeem() {
 
   async function go() {
     if (!t) return;
-    if (!businessCode.trim()) {
+
+    const codeTrim = businessCode.trim().toUpperCase();
+
+    if (!codeTrim) {
       setM("Ingresa el código de negocio.");
       setOk(false);
       return;
@@ -112,21 +138,39 @@ export default function Redeem() {
       return;
     }
 
+    // Confirmación si ya se canjeó un momento antes el mismo descuento
+    if (
+      lastRedeem &&
+      lastRedeem.businessCode === codeTrim &&
+      lastRedeem.discountCode === discountCode
+    ) {
+      const again = window.confirm(
+        "Ya registraste un canje para este negocio y este descuento hace un momento.\n\n¿Deseas realizar otro canje?"
+      );
+      if (!again) return;
+    }
+
     setLoading(true);
     setM(null);
     try {
       const r = await fetch(`/api/redeem?token=${encodeURIComponent(t)}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ businessCode, discountCode }),
+        body: JSON.stringify({ businessCode: codeTrim, discountCode }),
       });
       const j = await r.json();
       setOk(j.ok);
       setM(j.message);
+
+      if (j.ok) {
+        setLastRedeem({ businessCode: codeTrim, discountCode });
+      }
     } finally {
       setLoading(false);
     }
   }
+
+  const selectedDiscount = discounts.find((d) => d.code === discountCode);
 
   return (
     <div className="max-w-xl mx-auto">
@@ -169,8 +213,9 @@ export default function Redeem() {
           </div>
 
           <p className="text-sm text-slate-600">
-            Ingrese el <strong>código del negocio</strong>. Luego cargue los
-            descuentos disponibles y seleccione cuál desea canjear.
+            Ingrese el <strong>código del negocio</strong>. Los descuentos
+            disponibles se cargarán automáticamente y podrá seleccionar cuál
+            desea canjear.
           </p>
 
           <div className="grid gap-3">
@@ -181,18 +226,14 @@ export default function Redeem() {
                 placeholder="Ej: RESTO"
                 value={businessCode}
                 onChange={(e) => setB(e.target.value.toUpperCase())}
+                disabled={!tokenOk}
               />
+              {loadingOptions && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Buscando descuentos…
+                </p>
+              )}
             </div>
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={loadOptions}
-              disabled={!tokenOk || loadingOptions}
-              title={!tokenOk ? "Token no válido" : ""}
-            >
-              {loadingOptions ? "Buscando descuentos…" : "Buscar descuentos"}
-            </button>
 
             {discounts.length > 0 && (
               <div>
@@ -210,13 +251,22 @@ export default function Redeem() {
                   ))}
                 </select>
 
-                {discountCode && (
-                  <p className="mt-1 text-xs text-slate-500">
-                    {
-                      discounts.find((d) => d.code === discountCode)
-                        ?.description
-                    }
-                  </p>
+                {selectedDiscount && (
+                  <>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {selectedDiscount.description}
+                    </p>
+                    {selectedDiscount.limitPerUser != null && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Te quedan{" "}
+                        <span className="font-semibold">
+                          {selectedDiscount.remaining ?? 0}
+                        </span>{" "}
+                        canjes de este descuento (límite por usuario:{" "}
+                        {selectedDiscount.limitPerUser}).
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}

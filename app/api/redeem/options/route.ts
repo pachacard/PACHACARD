@@ -21,7 +21,8 @@ function extractTokenVersion(p: any): number | null {
 
 /**
  * GET /api/redeem/options?token=...&businessCode=RESTO
- * Devuelve los descuentos disponibles para ese usuario en ese negocio.
+ * Devuelve los descuentos disponibles para ese usuario en ese negocio,
+ * incluyendo cuántos canjes le quedan por usuario.
  */
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -109,6 +110,7 @@ export async function GET(req: Request) {
         tierBasic: true,
         tierNormal: true,
         tierPremium: true,
+        limitPerUser: true,
         limitTotal: true,
         usedTotal: true,
       },
@@ -123,20 +125,52 @@ export async function GET(req: Request) {
       return false;
     });
 
-    // 5) Filtrar por stock total (el límite por usuario se valida en el POST)
+    // 5) Filtrar por stock total (límite global)
     const available = filteredByTier.filter((d) => {
       if (!d.limitTotal) return true;
       return (d.usedTotal ?? 0) < d.limitTotal;
     });
 
-    return NextResponse.json({
-      ok: true,
-      business: { name: business.name },
-      discounts: available.map((d) => ({
+    // 6) Calcular cuántos canjes lleva este usuario por cada descuento
+    const discountIds = available.map((d) => d.id);
+
+    let usedMap: Record<string, number> = {};
+    if (discountIds.length > 0) {
+      const userRedemptions = await prisma.redemption.findMany({
+        where: {
+          userId: user.id,
+          discountId: { in: discountIds },
+        },
+        select: { discountId: true },
+      });
+
+      usedMap = userRedemptions.reduce<Record<string, number>>((acc, r) => {
+        acc[r.discountId] = (acc[r.discountId] ?? 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    // 7) Armar respuesta con "remaining" (cuántos le quedan)
+    const items = available.map((d) => {
+      const usedByUser = usedMap[d.id] ?? 0;
+      const remaining =
+        d.limitPerUser != null
+          ? Math.max(d.limitPerUser - usedByUser, 0)
+          : null;
+
+      return {
         code: d.code,
         label: d.title || d.code,
         description: d.description,
-      })),
+        limitPerUser: d.limitPerUser,
+        remaining,
+      };
+    });
+
+    return NextResponse.json({
+      ok: true,
+      business: { name: business.name },
+      discounts: items,
     });
   } catch (e) {
     console.error("[REDEEM_OPTIONS]", e);
