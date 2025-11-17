@@ -96,10 +96,10 @@ export default async function Page({ searchParams }: Props) {
     getDiscountsByCategorySlugForUser(currentCat, tier),
   ]);
 
-  // Base: guardamos índice original para mantener el orden por fecha
+  // Base: guardamos índice original para mantener el orden backend como fallback
   const baseDiscounts = (discountsRaw as any[]).map((d, index) => ({
     ...d,
-    _idx: index, // índice original
+    _idx: index,
   }));
 
   // 👉 Enriquecemos los descuentos con los canjes de ESTE usuario
@@ -130,9 +130,10 @@ export default async function Page({ searchParams }: Props) {
   // Filtro por búsqueda
   const filtered = filterByQuery(discountsWithUsage, query);
 
-  // 👉 Reordenamos en el front:
-  //    - primero disponibles
-  //    - al final los agotados o con límite usado para este usuario
+  // 👉 Orden:
+  //    1. Disponibles primero, agotados/límite usado al final.
+  //    2. Entre disponibles, por fecha de expiración (endAt más cercana primero).
+  //    3. Fallback: índice original del backend.
   const discounts = filtered.sort((a: any, b: any) => {
     const limitPerUserA = a.limitPerUser ?? null;
     const usedByUserA = a.usedByUser ?? 0;
@@ -140,7 +141,7 @@ export default async function Page({ searchParams }: Props) {
       limitPerUserA != null && usedByUserA >= limitPerUserA;
     const soldOutA =
       a.limitTotal && (a.usedTotal ?? 0) >= (a.limitTotal ?? 0);
-    const isOutA = userLimitUsedA || soldOutA;
+    const isOutA = !!(userLimitUsedA || soldOutA);
 
     const limitPerUserB = b.limitPerUser ?? null;
     const usedByUserB = b.usedByUser ?? 0;
@@ -148,14 +149,23 @@ export default async function Page({ searchParams }: Props) {
       limitPerUserB != null && usedByUserB >= limitPerUserB;
     const soldOutB =
       b.limitTotal && (b.usedTotal ?? 0) >= (b.limitTotal ?? 0);
-    const isOutB = userLimitUsedB || soldOutB;
+    const isOutB = !!(userLimitUsedB || soldOutB);
 
-    if (isOutA === isOutB) {
-      // mismo estado (ambos disponibles o ambos agotados) → respetar orden original
-      return (a._idx ?? 0) - (b._idx ?? 0);
+    // Primero grupo: disponibles vs agotados
+    if (isOutA !== isOutB) {
+      return isOutA ? 1 : -1; // los agotados al final
     }
-    // los agotados / límite usado al final
-    return isOutA ? 1 : -1;
+
+    // Ambos del mismo grupo
+    // Si son disponibles, ordenar por fecha de expiración
+    if (!isOutA) {
+      const ea = a.endAt ? new Date(a.endAt).getTime() : Infinity;
+      const eb = b.endAt ? new Date(b.endAt).getTime() : Infinity;
+      if (ea !== eb) return ea - eb;
+    }
+
+    // Fallback: orden original
+    return (a._idx ?? 0) - (b._idx ?? 0);
   });
 
   return (
