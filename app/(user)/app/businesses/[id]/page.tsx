@@ -1,4 +1,4 @@
-//app\(user)\app\businesses\[id]\page.tsx
+// app/(user)/app/businesses/[id]/page.tsx
 
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -70,20 +70,47 @@ export default async function BusinessDetailPage({ params }: Props) {
         <div className="relative h-52 md:h-64 w-full bg-white border-b">
           {hero ? (
             isExternal ? (
-              <img src={hero} alt={business.name} className="h-full w-full object-contain p-3" />
+              <img
+                src={hero}
+                alt={business.name}
+                className="h-full w-full object-contain p-3"
+              />
             ) : (
-              // next/image también es válido si prefieres
-              // <Image src={hero} alt={business.name} fill className="object-contain p-3" />
-              <img src={hero} alt={business.name} className="h-full w-full object-contain p-3" />
+              <img
+                src={hero}
+                alt={business.name}
+                className="h-full w-full object-contain p-3"
+              />
             )
           ) : (
-            <div className="grid h-full w-full place-content-center text-slate-400">Sin imagen</div>
+            <div className="grid h-full w-full place-content-center text-slate-400">
+              Sin imagen
+            </div>
           )}
         </div>
 
         <div className="card-body">
           <h1 className="text-2xl font-semibold">{business.name}</h1>
-          {business.address && <p className="text-sm text-slate-600">{business.address}</p>}
+
+          {/* Dirección */}
+          {business.address && (
+            <p className="text-sm text-slate-600">{business.address}</p>
+          )}
+
+          {/* Botón "Ver en Google Maps" */}
+          {business.googleMapsUrl && (
+            <div className="mt-2">
+              <a
+                href={business.googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-[var(--brand,#7e1515)] hover:bg-slate-50"
+              >
+                <span aria-hidden>📍</span>
+                Ver en Google Maps
+              </a>
+            </div>
+          )}
 
           {/* chips de categorías del negocio */}
           {business.categories.length > 0 && (
@@ -105,7 +132,9 @@ export default async function BusinessDetailPage({ params }: Props) {
       <div>
         <h2 className="text-xl font-semibold">Descuentos</h2>
         {discounts.length === 0 ? (
-          <div className="mt-3 text-sm text-slate-500">No hay descuentos activos para este negocio.</div>
+          <div className="mt-3 text-sm text-slate-500">
+            No hay descuentos activos para este negocio.
+          </div>
         ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {discounts.map((d) => (
@@ -116,7 +145,10 @@ export default async function BusinessDetailPage({ params }: Props) {
       </div>
 
       <div>
-        <a href="/app/businesses" className="text-sm text-slate-600 hover:underline">
+        <a
+          href="/app/businesses"
+          className="text-sm text-slate-600 hover:underline"
+        >
           ← Volver a negocios
         </a>
       </div>
