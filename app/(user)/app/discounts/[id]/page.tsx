@@ -73,6 +73,12 @@ export default async function DiscountDetail({
   const src = fromDiscount || d.business?.imageUrl || "";
   const isExternal = /^https?:\/\//i.test(src);
 
+  // URL de Google Maps (si existe y no está vacía)
+  const mapsUrl =
+    d.business?.googleMapsUrl && d.business.googleMapsUrl.trim()
+      ? d.business.googleMapsUrl.trim()
+      : null;
+
   return (
     <div className="container-app py-6 space-y-6">
       <div className="card p-0 overflow-hidden">
@@ -122,7 +128,7 @@ export default async function DiscountDetail({
         <div className="card-body space-y-2">
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-semibold">{d.title}</h1>
-            {/* 👇 Aquí antes estaba <span className="badge">{d.code}</span> y lo ocultamos para el usuario */}
+            {/* Ya no mostramos el código del descuento al usuario final */}
           </div>
 
           {d.description && <p className="text-gray-700">{d.description}</p>}
@@ -184,6 +190,23 @@ export default async function DiscountDetail({
               <div className="text-xs text-slate-500 mt-1">
                 {porUso}% del límite total utilizado
               </div>
+            </div>
+          )}
+
+          {mapsUrl && (
+            <div className="mt-3">
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium text-[var(--brand,#7e1515)] hover:bg-slate-50"
+              >
+                Ver en Google Maps
+              </a>
+              <p className="mt-1 text-xs text-slate-500">
+                Se abrirá Google Maps en una pestaña nueva con la ubicación del
+                negocio.
+              </p>
             </div>
           )}
         </div>
