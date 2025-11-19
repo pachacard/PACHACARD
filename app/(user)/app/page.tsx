@@ -239,7 +239,7 @@ export default async function Page({ searchParams }: Props) {
             allIcon="/icons/cats/todas.png"
           />
         </section>
-
+        
         {/* Listado de descuentos */}
         <section className="space-y-3">
           <div className="flex items-center justify-between px-1 text-sm">
@@ -254,13 +254,15 @@ export default async function Page({ searchParams }: Props) {
           ) : (
             <div
               aria-label="Listado de descuentos"
-              className="mt-1 space-y-4"
+              className="
+                mt-1
+                grid grid-cols-1 gap-4
+                md:grid-cols-2
+                xl:grid-cols-3
+              "
             >
               {discounts.map((d: any) => (
-                <div
-                  key={d.id}
-                  className="mx-auto w-full max-w-md sm:max-w-none"
-                >
+                <div key={d.id} className="w-full">
                   <DiscountCard discount={d} />
                 </div>
               ))}
@@ -275,6 +277,7 @@ export default async function Page({ searchParams }: Props) {
     </>
   );
 }
+
 
 function EmptyState({ hasQuery }: { hasQuery: boolean }) {
   return (
