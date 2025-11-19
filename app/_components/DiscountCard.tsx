@@ -83,9 +83,8 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
 
   const isGreyed = soldOut || userLimitUsed;
 
-  // Datos de negocio / categoría
+  // Datos de negocio
   const businessName = d?.business?.name ?? "";
-  const categoryName = d?.business?.category ?? "Descuento";
 
   // Vigencia (solo fin para mostrar en la card)
   const endLabel = endAt
@@ -149,11 +148,8 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
           {/* Degradado para que se lea el texto */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
 
-          {/* Badges arriba izq */}
-          <div className="absolute left-4 top-4 space-y-2">
-            <span className="inline-flex items-center rounded-full bg-black/45 px-3 py-1.5 text-xs text-white border border-white/20">
-              {categoryName}
-            </span>
+          {/* Badges arriba izq (solo nuevo / pronto expira) */}
+          <div className="absolute left-4 top-4 flex flex-col gap-2">
             <div className="flex gap-2">
               {isNew && !soldOut && !userLimitUsed && (
                 <span className="rounded-full border border-sky-200 bg-sky-100/95 px-2 py-0.5 text-[11px] font-medium text-sky-800 shadow-sm">
@@ -177,7 +173,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             </span>
           </div>
 
-          {/* Badge de porcentaje flotante (sin texto DESCUENTO) */}
+          {/* Badge de porcentaje flotante (sin texto "DESCUENTO") */}
           {percentage != null && (
             <div className="absolute right-4 bottom-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-white shadow-xl">
               <div className="flex items-baseline gap-1">
@@ -232,8 +228,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
               </p>
               {limitPerUser != null && usedByUser > 0 && (
                 <p className="mt-0.5 text-[11px] text-amber-700/80">
-                  Ya usaste {Math.min(usedByUser, limitPerUser)} /{" "}
-                  {limitPerUser}
+                  Ya usaste {Math.min(usedByUser, limitPerUser)} / {limitPerUser}
                 </p>
               )}
             </div>
