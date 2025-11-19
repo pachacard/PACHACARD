@@ -177,14 +177,13 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             </span>
           </div>
 
-          {/* Badge de porcentaje flotante */}
+          {/* Badge de porcentaje flotante (sin texto DESCUENTO) */}
           {percentage != null && (
             <div className="absolute right-4 bottom-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-white shadow-xl">
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl leading-none">{percentage}</span>
                 <span className="text-lg leading-none">%</span>
               </div>
-              <p className="mt-0.5 text-[11px] text-white/90">DESCUENTO</p>
             </div>
           )}
 

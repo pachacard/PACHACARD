@@ -118,7 +118,7 @@ export default async function Page({ searchParams }: Props) {
     });
 
     const usageMap = new Map<string, number>(
-      usageRows.map((row) => [row.discountId, row._count._all]),
+      usageRows.map((row) => [row.discountId, row._count._all])
     );
 
     discountsWithUsage = baseDiscounts.map((d: any) => ({
@@ -170,71 +170,65 @@ export default async function Page({ searchParams }: Props) {
 
   const userName =
     (session.user.name as string | undefined) ||
-    (session.user.email as string | undefined) ||
-    "Usuario PACHACARD";
+    (session.user.email
+      ? String(session.user.email).split("@")[0]
+      : "ciudadano");
 
-  const offersCount = discounts.length;
+  const tierLabel =
+    tier === "PREMIUM"
+      ? "PREMIUM"
+      : tier === "NORMAL"
+      ? "NORMAL"
+      : tier === "BASIC"
+      ? "BASIC"
+      : "—";
+
+  const totalDisponibles = discounts.length;
+  const totalCategorias = cats.length;
 
   return (
     <>
-      <div className="container-app py-4 md:py-6 space-y-6">
-        {/* HEADER TIPO APP MÓVIL */}
-        <section className="rounded-2xl bg-gradient-to-r from-[var(--brand)] to-[#8b0202] px-4 py-4 text-white shadow-lg">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1">
-              <p className="text-[11px] uppercase tracking-wide text-white/80">
-                Mis descuentos
-              </p>
-              <p className="mt-1 text-lg font-semibold leading-tight truncate">
-                Hola, {userName}
-              </p>
-              <p className="mt-1 text-xs text-white/80">
+      <div className="container-app py-6 md:py-8 space-y-6">
+        {/* Hero superior rojo */}
+        <section className="rounded-3xl bg-gradient-to-b from-[#9a1e1e] to-[#7e1515] px-5 py-4 text-white shadow-lg">
+          <div className="mb-3 text-xs uppercase tracking-[0.18em] opacity-80">
+            MIS DESCUENTOS
+          </div>
+
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-sm opacity-80">Hola, {userName}</p>
+              <p className="max-w-xs text-xs text-white/90">
                 Explora beneficios disponibles para tu PACHACARD.
               </p>
             </div>
 
-            {tier && (
-              <div className="rounded-xl bg-white/10 px-3 py-2 text-xs font-medium shadow-sm backdrop-blur">
-                <span className="block text-[10px] text-white/80">
-                  Tu nivel
-                </span>
-                <span className="text-sm">{tier}</span>
-              </div>
-            )}
+            <div className="rounded-2xl bg-white/10 px-3 py-2 text-right text-xs border border-white/15">
+              <div className="opacity-80 text-[10px]">Tu nivel</div>
+              <div className="font-semibold text-sm">{tierLabel}</div>
+            </div>
           </div>
 
-          {/* Stats pequeñas */}
-          <div className="mt-4 grid grid-cols-2 gap-3 text-slate-900">
-            <div className="rounded-xl bg-white/95 px-3 py-3 text-left shadow-sm">
-              <div className="text-[11px] font-medium text-slate-500">
-                Disponibles
-              </div>
-              <div className="mt-1 text-lg font-semibold text-slate-900">
-                {offersCount}
-              </div>
+          {/* Stats dentro de la tarjeta roja */}
+          <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+            <div className="rounded-2xl bg-white/10 px-3 py-3 border border-white/15">
+              <div className="opacity-90 mb-1">Disponibles</div>
+              <div className="text-lg font-semibold">{totalDisponibles}</div>
             </div>
-            <div className="rounded-xl bg-white/90 px-3 py-3 text-left shadow-sm">
-              <div className="text-[11px] font-medium text-slate-500">
-                Tu nivel
-              </div>
-              <div className="mt-1 text-sm font-semibold text-slate-900">
-                {tier ?? "Sin nivel"}
-              </div>
+            <div className="rounded-2xl bg-white/10 px-3 py-3 border border-white/15">
+              <div className="opacity-90 mb-1">Categorías</div>
+              <div className="text-lg font-semibold">{totalCategorias}</div>
             </div>
           </div>
         </section>
 
-        {/* CATEGORÍAS */}
-        <section>
-          <div className="mb-2 flex items-center justify-between px-1">
-            <h2 className="text-sm font-semibold text-slate-900">
-              Categorías
-            </h2>
-            {offersCount > 0 && (
-              <span className="text-[11px] text-slate-500">
-                Filtra por tipo de beneficio
-              </span>
-            )}
+        {/* Categorías */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between px-1 text-sm">
+            <h2 className="font-medium text-slate-900">Categorías</h2>
+            <span className="text-xs text-slate-500">
+              Filtra por tipo de beneficio
+            </span>
           </div>
 
           <CategoryPills
@@ -246,25 +240,26 @@ export default async function Page({ searchParams }: Props) {
           />
         </section>
 
-        {/* DESCUENTOS */}
-        <section aria-label="Listado de descuentos" className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-base font-semibold text-slate-900">
-              Descuentos para ti
-            </h2>
+        {/* Listado de descuentos */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between px-1 text-sm">
+            <h2 className="font-medium text-slate-900">Descuentos para ti</h2>
             <span className="text-xs text-slate-500">
-              {offersCount} {offersCount === 1 ? "oferta" : "ofertas"}
+              {discounts.length} ofertas
             </span>
           </div>
 
           {discounts.length === 0 ? (
             <EmptyState hasQuery={!!query} />
           ) : (
-            <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+              aria-label="Listado de descuentos"
+              className="mt-1 space-y-4"
+            >
               {discounts.map((d: any) => (
                 <div
                   key={d.id}
-                  className="mx-auto w-full max-w-sm sm:max-w-none"
+                  className="mx-auto w-full max-w-md sm:max-w-none"
                 >
                   <DiscountCard discount={d} />
                 </div>
@@ -273,7 +268,6 @@ export default async function Page({ searchParams }: Props) {
           )}
         </section>
 
-        {/* espacio para bottom nav en móvil */}
         <div className="h-20 md:hidden" />
       </div>
 
@@ -284,7 +278,7 @@ export default async function Page({ searchParams }: Props) {
 
 function EmptyState({ hasQuery }: { hasQuery: boolean }) {
   return (
-    <div className="mx-auto mt-4 max-w-md rounded-2xl border bg-white p-8 text-center shadow-sm">
+    <div className="mx-auto mt-4 max-w-md rounded-xl border bg-white p-8 text-center">
       <p className="font-semibold">
         {hasQuery
           ? "No encontramos resultados"
