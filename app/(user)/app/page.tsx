@@ -118,7 +118,7 @@ export default async function Page({ searchParams }: Props) {
     });
 
     const usageMap = new Map<string, number>(
-      usageRows.map((row) => [row.discountId, row._count._all])
+      usageRows.map((row) => [row.discountId, row._count._all]),
     );
 
     discountsWithUsage = baseDiscounts.map((d: any) => ({
@@ -168,39 +168,112 @@ export default async function Page({ searchParams }: Props) {
     return (a._idx ?? 0) - (b._idx ?? 0);
   });
 
+  const userName =
+    (session.user.name as string | undefined) ||
+    (session.user.email as string | undefined) ||
+    "Usuario PACHACARD";
+
+  const offersCount = discounts.length;
+
   return (
     <>
-      <div className="container-app py-6 md:py-8">
-        <header className="mb-4">
-          <h1 className="text-xl md:text-2xl font-semibold">Mis Descuentos</h1>
-          <p className="text-sm text-slate-600">
-            Explora beneficios disponibles para tu PACHACARD.
-          </p>
-        </header>
+      <div className="container-app py-4 md:py-6 space-y-6">
+        {/* HEADER TIPO APP MÓVIL */}
+        <section className="rounded-2xl bg-gradient-to-r from-[var(--brand)] to-[#8b0202] px-4 py-4 text-white shadow-lg">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <p className="text-[11px] uppercase tracking-wide text-white/80">
+                Mis descuentos
+              </p>
+              <p className="mt-1 text-lg font-semibold leading-tight truncate">
+                Hola, {userName}
+              </p>
+              <p className="mt-1 text-xs text-white/80">
+                Explora beneficios disponibles para tu PACHACARD.
+              </p>
+            </div>
 
-        <CategoryPills
-          categories={cats}
-          currentSlug={currentCat}
-          baseHref="/app"
-          showAllPill
-          allIcon="/icons/cats/todas.png"
-        />
-
-        {discounts.length === 0 ? (
-          <EmptyState hasQuery={!!query} />
-        ) : (
-          <section
-            aria-label="Listado de descuentos"
-            className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {discounts.map((d: any) => (
-              <div key={d.id} className="mx-auto w-full max-w-sm sm:max-w-none">
-                <DiscountCard discount={d} />
+            {tier && (
+              <div className="rounded-xl bg-white/10 px-3 py-2 text-xs font-medium shadow-sm backdrop-blur">
+                <span className="block text-[10px] text-white/80">
+                  Tu nivel
+                </span>
+                <span className="text-sm">{tier}</span>
               </div>
-            ))}
-          </section>
-        )}
+            )}
+          </div>
 
+          {/* Stats pequeñas */}
+          <div className="mt-4 grid grid-cols-2 gap-3 text-slate-900">
+            <div className="rounded-xl bg-white/95 px-3 py-3 text-left shadow-sm">
+              <div className="text-[11px] font-medium text-slate-500">
+                Disponibles
+              </div>
+              <div className="mt-1 text-lg font-semibold text-slate-900">
+                {offersCount}
+              </div>
+            </div>
+            <div className="rounded-xl bg-white/90 px-3 py-3 text-left shadow-sm">
+              <div className="text-[11px] font-medium text-slate-500">
+                Tu nivel
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-900">
+                {tier ?? "Sin nivel"}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CATEGORÍAS */}
+        <section>
+          <div className="mb-2 flex items-center justify-between px-1">
+            <h2 className="text-sm font-semibold text-slate-900">
+              Categorías
+            </h2>
+            {offersCount > 0 && (
+              <span className="text-[11px] text-slate-500">
+                Filtra por tipo de beneficio
+              </span>
+            )}
+          </div>
+
+          <CategoryPills
+            categories={cats}
+            currentSlug={currentCat}
+            baseHref="/app"
+            showAllPill
+            allIcon="/icons/cats/todas.png"
+          />
+        </section>
+
+        {/* DESCUENTOS */}
+        <section aria-label="Listado de descuentos" className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-base font-semibold text-slate-900">
+              Descuentos para ti
+            </h2>
+            <span className="text-xs text-slate-500">
+              {offersCount} {offersCount === 1 ? "oferta" : "ofertas"}
+            </span>
+          </div>
+
+          {discounts.length === 0 ? (
+            <EmptyState hasQuery={!!query} />
+          ) : (
+            <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {discounts.map((d: any) => (
+                <div
+                  key={d.id}
+                  className="mx-auto w-full max-w-sm sm:max-w-none"
+                >
+                  <DiscountCard discount={d} />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* espacio para bottom nav en móvil */}
         <div className="h-20 md:hidden" />
       </div>
 
@@ -211,7 +284,7 @@ export default async function Page({ searchParams }: Props) {
 
 function EmptyState({ hasQuery }: { hasQuery: boolean }) {
   return (
-    <div className="mx-auto mt-8 max-w-md rounded-xl border bg-white p-8 text-center">
+    <div className="mx-auto mt-4 max-w-md rounded-2xl border bg-white p-8 text-center shadow-sm">
       <p className="font-semibold">
         {hasQuery
           ? "No encontramos resultados"
