@@ -1,9 +1,9 @@
 // app/(user)/app/businesses/[id]/page.tsx
-
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DiscountCard from "@/app/_components/DiscountCard";
+import { MapPin } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -37,11 +37,11 @@ export default async function BusinessDetailPage({ params }: Props) {
   });
   const tier = (me?.tier as Tier) ?? undefined;
 
-  // negocio
+  // negocio + categorías
   const business = await prisma.business.findUnique({
     where: { id: params.id },
     include: {
-      categories: { include: { category: true } }, // categorías del negocio
+      categories: { include: { category: true } },
     },
   });
   if (!business) return notFound();
@@ -63,23 +63,26 @@ export default async function BusinessDetailPage({ params }: Props) {
   const hero = business.imageUrl || "/brand/business-fallback.png";
   const isExternal = /^https?:\/\//i.test(hero);
 
+  const categoryLabels =
+    business.categories?.map((bc) => bc.category.name) ?? [];
+
   return (
     <div className="container-app py-6 md:py-8 space-y-6">
-      {/* Hero negocio */}
-      <div className="card overflow-hidden p-0">
-        <div className="relative h-52 md:h-64 w-full bg-white border-b">
+      {/* Hero del negocio + info básica */}
+      <section className="card overflow-hidden p-0">
+        <div className="relative h-52 md:h-64 w-full bg-slate-100">
           {hero ? (
             isExternal ? (
               <img
                 src={hero}
                 alt={business.name}
-                className="h-full w-full object-contain p-3"
+                className="h-full w-full object-cover"
               />
             ) : (
               <img
                 src={hero}
                 alt={business.name}
-                className="h-full w-full object-contain p-3"
+                className="h-full w-full object-cover"
               />
             )
           ) : (
@@ -87,63 +90,105 @@ export default async function BusinessDetailPage({ params }: Props) {
               Sin imagen
             </div>
           )}
+
+          {/* Degradado para texto */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
+
+          {/* Nombre + categorías sobre la imagen */}
+          <div className="absolute bottom-4 left-4 right-4 space-y-2">
+            {categoryLabels.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {categoryLabels.map((name) => (
+                  <span
+                    key={name}
+                    className="rounded-full bg-black/45 px-3 py-1 text-xs text-white border border-white/20"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            )}
+            <h1 className="text-xl md:text-2xl font-semibold text-white drop-shadow">
+              {business.name}
+            </h1>
+          </div>
         </div>
 
-        <div className="card-body">
-          <h1 className="text-2xl font-semibold">{business.name}</h1>
+        <div className="card-body space-y-4">
+          {/* Bloque de ubicación */}
+          {(business.address || business.googleMapsUrl) && (
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 rounded-full bg-[var(--brand,#7e1515)]/10 p-2">
+                  <MapPin className="h-4 w-4 text-[var(--brand,#7e1515)]" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-slate-500">
+                    Ubicación del negocio
+                  </p>
+                  <p className="text-sm text-slate-800">
+                    {business.address ?? "Dirección no registrada"}
+                  </p>
+                </div>
+              </div>
 
-          {/* Dirección */}
-          {business.address && (
-            <p className="text-sm text-slate-600">{business.address}</p>
-          )}
-
-          {/* Botón "Ver en Google Maps" */}
-          {business.googleMapsUrl && (
-            <div className="mt-2">
-              <a
-                href={business.googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-[var(--brand,#7e1515)] hover:bg-slate-50"
-              >
-                <span aria-hidden>📍</span>
-                Ver en Google Maps
-              </a>
+              {business.googleMapsUrl && (
+                <a
+                  href={business.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition"
+                >
+                  <MapPin className="h-4 w-4" />
+                  Abrir en Google Maps
+                </a>
+              )}
             </div>
           )}
 
-          {/* chips de categorías del negocio */}
-          {business.categories.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {business.categories.map((bc) => (
+          {/* Chips de categorías como resumen textual abajo (opcional) */}
+          {categoryLabels.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {categoryLabels.map((name) => (
                 <span
-                  key={bc.categoryId}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-700"
+                  key={name + "-chip"}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700"
                 >
-                  {bc.category.name}
+                  {name}
                 </span>
               ))}
             </div>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Descuentos del negocio */}
-      <div>
-        <h2 className="text-xl font-semibold">Descuentos</h2>
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-lg md:text-xl font-semibold">
+            Descuentos disponibles
+          </h2>
+          <span className="text-xs text-slate-500">
+            {discounts.length} activo{discounts.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
         {discounts.length === 0 ? (
-          <div className="mt-3 text-sm text-slate-500">
-            No hay descuentos activos para este negocio.
+          <div className="mx-auto max-w-md rounded-xl border bg-white p-6 text-center text-sm text-slate-600">
+            Este negocio aún no tiene descuentos activos para tu nivel.
           </div>
         ) : (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {discounts.map((d) => (
-              <DiscountCard key={d.id} discount={d as any} />
+              <div key={d.id} className="w-full max-w-sm sm:max-w-none mx-auto">
+                <DiscountCard discount={d as any} />
+              </div>
             ))}
           </div>
         )}
-      </div>
+      </section>
 
+      {/* Volver */}
       <div>
         <a
           href="/app/businesses"
