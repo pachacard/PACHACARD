@@ -1,314 +1,368 @@
-// app/(user)/app/page.tsx
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
-import {
-  getCategoriesWithCountsForUser,
-  getDiscountsByCategorySlugForUser,
-} from "@/lib/db";
-
-import CategoryPills from "@/app/_components/CategoryPills";
-import DiscountCard from "@/app/_components/DiscountCard";
-import BottomNav from "@/app/_components/BottomNav";
-
+// app/(user)/app/discounts/[id]/page.tsx
 export const dynamic = "force-dynamic";
 
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import {
+  MapPin,
+  Calendar,
+  Tag,
+  Sparkles,
+  Award,
+  X,
+} from "lucide-react";
+
 type Tier = "BASIC" | "NORMAL" | "PREMIUM";
-type Props = { searchParams?: { cat?: string; q?: string } };
 
-/** Resuelve el Tier con buen fallback (session -> id -> email) */
-async function resolveTier(session: any): Promise<Tier | undefined> {
-  const fromSession = session?.user?.tier as Tier | undefined;
-  if (fromSession) return fromSession;
-
-  const idFromSession = session?.user?.id ?? null;
-  if (idFromSession) {
-    const me = await prisma.user.findUnique({
-      where: { id: String(idFromSession) },
-      select: { tier: true },
+function formatFechaLarga(date: Date) {
+  try {
+    return date.toLocaleDateString("es-PE", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
     });
-    if (me?.tier) return me.tier as Tier;
+  } catch {
+    return date.toISOString().slice(0, 10);
   }
+}
+
+function formatFechaCorta(date: Date) {
+  try {
+    return date.toLocaleDateString("es-PE", {
+      day: "2-digit",
+      month: "short",
+    });
+  } catch {
+    return date.toISOString().slice(0, 10);
+  }
+}
+
+export default async function DiscountDetail({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const session = await auth();
+  const now = new Date();
+
+  const d = await prisma.discount.findUnique({
+    where: { id: params.id },
+    include: {
+      business: true,
+      categories: { include: { category: true } },
+    },
+  });
+
+  if (!d) return notFound();
+
+  // Usuario: id y tier
+  let mine = 0;
+  let userTier: Tier | undefined = undefined;
 
   if (session?.user?.email) {
-    const meByEmail = await prisma.user.findUnique({
-      where: { email: session.user.email.toLowerCase() },
-      select: { tier: true },
-    });
-    if (meByEmail?.tier) return meByEmail.tier as Tier;
-  }
-
-  return undefined;
-}
-
-function filterByQuery(discounts: any[], q?: string) {
-  if (!q) return discounts;
-  const needle = q.trim().toLowerCase();
-  if (!needle) return discounts;
-
-  return discounts.filter((d) => {
-    const title = String(d?.title ?? "").toLowerCase();
-    const desc = String(d?.description ?? "").toLowerCase();
-    const biz = String(d?.business?.name ?? "").toLowerCase();
-    const code = String(d?.code ?? "").toLowerCase();
-    return (
-      title.includes(needle) ||
-      desc.includes(needle) ||
-      biz.includes(needle) ||
-      code.includes(needle)
-    );
-  });
-}
-
-export default async function Page({ searchParams }: Props) {
-  const session = await auth();
-
-  // ⛔️ Si es ADMIN, no debe ver /app → envíalo a /admin
-  if (session?.user?.role === "ADMIN") {
-    redirect("/admin");
-  }
-
-  if (!session?.user) {
-    return (
-      <div className="container-app py-10 text-sm text-slate-600">
-        Inicia sesión para ver tus descuentos.
-      </div>
-    );
-  }
-
-  const tier = await resolveTier(session);
-  const currentCat = searchParams?.cat || undefined;
-  const query = searchParams?.q || undefined;
-
-  // 👉 Obtenemos el id real del usuario para poder contar sus canjes
-  let userId: string | null = null;
-  if (session.user.email) {
     const me = await prisma.user.findUnique({
       where: { email: String(session.user.email).toLowerCase() },
-      select: { id: true },
-    });
-    if (me) userId = me.id;
-  }
-
-  // Categorías + descuentos visibles para el tier
-  const [cats, discountsRaw] = await Promise.all([
-    getCategoriesWithCountsForUser(tier),
-    getDiscountsByCategorySlugForUser(currentCat, tier),
-  ]);
-
-  // Base: guardamos índice original para mantener el orden backend como fallback
-  const baseDiscounts = (discountsRaw as any[]).map((d, index) => ({
-    ...d,
-    _idx: index,
-  }));
-
-  // 👉 Enriquecemos los descuentos con los canjes de ESTE usuario
-  let discountsWithUsage: any[] = baseDiscounts;
-
-  if (userId && baseDiscounts.length > 0) {
-    const ids = baseDiscounts.map((d: any) => d.id as string);
-
-    const usageRows = await prisma.redemption.groupBy({
-      by: ["discountId"],
-      where: {
-        userId,
-        discountId: { in: ids },
-      },
-      _count: { _all: true },
+      select: { id: true, tier: true },
     });
 
-    const usageMap = new Map<string, number>(
-      usageRows.map((row) => [row.discountId, row._count._all]),
-    );
-
-    discountsWithUsage = baseDiscounts.map((d: any) => ({
-      ...d,
-      usedByUser: usageMap.get(d.id) ?? 0,
-    }));
+    if (me) {
+      userTier = me.tier as Tier;
+      mine = await prisma.redemption.count({
+        where: { userId: me.id, discountId: d.id },
+      });
+    }
   }
 
-  // Filtro por búsqueda
-  const filtered = filterByQuery(discountsWithUsage, query);
+  // Badges "nuevo" y "pronto expira" (por si luego los quieres usar)
+  const MS_DAY = 24 * 60 * 60 * 1000;
+  const isNew = now.getTime() - d.startAt.getTime() <= 7 * MS_DAY;
+  const expiringSoon =
+    d.endAt.getTime() - now.getTime() <= 3 * MS_DAY &&
+    d.endAt.getTime() >= now.getTime();
 
-  // 👉 Orden:
-  //    1. Disponibles primero, agotados/límite usado al final.
-  //    2. Entre disponibles, por fecha de expiración (endAt más cercana primero).
-  //    3. Fallback: índice original del backend.
-  const discounts = filtered.sort((a: any, b: any) => {
-    const limitPerUserA = a.limitPerUser ?? null;
-    const usedByUserA = a.usedByUser ?? 0;
-    const userLimitUsedA =
-      limitPerUserA != null && usedByUserA >= limitPerUserA;
-    const soldOutA =
-      a.limitTotal && (a.usedTotal ?? 0) >= (a.limitTotal ?? 0);
-    const isOutA = !!(userLimitUsedA || soldOutA);
+  // Disponibilidad
+  const limitPerUser = d.limitPerUser ?? null;
+  const userLimitUsed =
+    limitPerUser != null && mine >= limitPerUser;
+  const soldOut =
+    d.limitTotal && (d.usedTotal ?? 0) >= (d.limitTotal ?? 0);
 
-    const limitPerUserB = b.limitPerUser ?? null;
-    const usedByUserB = b.usedByUser ?? 0;
-    const userLimitUsedB =
-      limitPerUserB != null && usedByUserB >= limitPerUserB;
-    const soldOutB =
-      b.limitTotal && (b.usedTotal ?? 0) >= (b.limitTotal ?? 0);
-    const isOutB = !!(userLimitUsedB || soldOutB);
+  const avail = soldOut
+    ? {
+        text: "agotado",
+        cls: "bg-rose-100 text-rose-700 border border-rose-200",
+      }
+    : userLimitUsed
+    ? {
+        text: "límite usado",
+        cls: "bg-amber-100 text-amber-700 border border-amber-200",
+      }
+    : {
+        text: "disponible",
+        cls: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+      };
 
-    // Primero grupo: disponibles vs agotados
-    if (isOutA !== isOutB) {
-      return isOutA ? 1 : -1; // los agotados al final
-    }
+  const totalRestante =
+    d.limitTotal != null ? Math.max(0, d.limitTotal - d.usedTotal) : null;
 
-    // Ambos del mismo grupo
-    // Si son disponibles, ordenar por fecha de expiración
-    if (!isOutA) {
-      const ea = a.endAt ? new Date(a.endAt).getTime() : Infinity;
-      const eb = b.endAt ? new Date(b.endAt).getTime() : Infinity;
-      if (ea !== eb) return ea - eb;
-    }
+  const usagePercentage =
+    d.limitTotal && d.limitTotal > 0
+      ? Math.min(100, Math.round((d.usedTotal / d.limitTotal) * 100))
+      : null;
 
-    // Fallback: orden original
-    return (a._idx ?? 0) - (b._idx ?? 0);
-  });
+  // Imagen hero
+  const fromDiscount = Array.isArray(d.images) ? d.images[0] : d.images;
+  const src = fromDiscount || d.business?.imageUrl || "";
+  const isExternal = /^https?:\/\//i.test(src);
 
-  const userName =
-    (session.user.name as string | undefined) ||
-    (session.user.email as string | undefined) ||
-    "Usuario PACHACARD";
+  const mainCategory =
+    d.categories[0]?.category?.name ?? "Descuento";
 
-  const offersCount = discounts.length;
+  // Tiers disponibles para este descuento
+  const tiersDisponibles: Tier[] = [];
+  if (d.tierBasic) tiersDisponibles.push("BASIC");
+  if (d.tierNormal) tiersDisponibles.push("NORMAL");
+  if (d.tierPremium) tiersDisponibles.push("PREMIUM");
+
+  const googleMapsUrl =
+    d.business?.googleMapsUrl &&
+    /^https?:\/\//i.test(d.business.googleMapsUrl)
+      ? d.business.googleMapsUrl
+      : null;
+
+  const tierChipClasses = (tier: Tier) => {
+    const base =
+      "px-3 py-1.5 rounded-full text-xs flex items-center gap-1.5 border shadow-sm";
+    const colors: Record<Tier, string> = {
+      BASIC: "bg-amber-50 text-amber-800 border-amber-200",
+      NORMAL: "bg-slate-50 text-slate-800 border-slate-200",
+      PREMIUM: "bg-yellow-50 text-yellow-900 border-yellow-300",
+    };
+    const highlight =
+      userTier === tier ? " ring-1 ring-[var(--brand)]/60" : "";
+    return `${base} ${colors[tier]}${highlight}`;
+  };
 
   return (
-    <>
-      <div className="container-app py-4 md:py-6 space-y-6">
-        {/* HEADER TIPO APP MÓVIL */}
-        <section className="rounded-2xl bg-gradient-to-r from-[var(--brand)] to-[#8b0202] px-4 py-4 text-white shadow-lg">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1">
-              <p className="text-[11px] uppercase tracking-wide text-white/80">
-                Mis descuentos
-              </p>
-              <p className="mt-1 text-lg font-semibold leading-tight truncate">
-                Hola, {userName}
-              </p>
-              <p className="mt-1 text-xs text-white/80">
-                Explora beneficios disponibles para tu PACHACARD.
-              </p>
-            </div>
-
-            {tier && (
-              <div className="rounded-xl bg-white/10 px-3 py-2 text-xs font-medium shadow-sm backdrop-blur">
-                <span className="block text-[10px] text-white/80">
-                  Tu nivel
-                </span>
-                <span className="text-sm">{tier}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Stats pequeñas */}
-          <div className="mt-4 grid grid-cols-2 gap-3 text-slate-900">
-            <div className="rounded-xl bg-white/95 px-3 py-3 text-left shadow-sm">
-              <div className="text-[11px] font-medium text-slate-500">
-                Disponibles
-              </div>
-              <div className="mt-1 text-lg font-semibold text-slate-900">
-                {offersCount}
-              </div>
-            </div>
-            <div className="rounded-xl bg-white/90 px-3 py-3 text-left shadow-sm">
-              <div className="text-[11px] font-medium text-slate-500">
-                Tu nivel
-              </div>
-              <div className="mt-1 text-sm font-semibold text-slate-900">
-                {tier ?? "Sin nivel"}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CATEGORÍAS */}
-        <section>
-          <div className="mb-2 flex items-center justify-between px-1">
-            <h2 className="text-sm font-semibold text-slate-900">
-              Categorías
-            </h2>
-            {offersCount > 0 && (
-              <span className="text-[11px] text-slate-500">
-                Filtra por tipo de beneficio
-              </span>
-            )}
-          </div>
-
-          <CategoryPills
-            categories={cats}
-            currentSlug={currentCat}
-            baseHref="/app"
-            showAllPill
-            allIcon="/icons/cats/todas.png"
-          />
-        </section>
-
-        {/* DESCUENTOS */}
-        <section aria-label="Listado de descuentos" className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-base font-semibold text-slate-900">
-              Descuentos para ti
-            </h2>
-            <span className="text-xs text-slate-500">
-              {offersCount} {offersCount === 1 ? "oferta" : "ofertas"}
-            </span>
-          </div>
-
-          {discounts.length === 0 ? (
-            <EmptyState hasQuery={!!query} />
+    <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Hero con imagen */}
+      <div className="relative w-full h-64 bg-slate-200">
+        {src ? (
+          isExternal ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={src}
+              alt={d.business?.name ?? "Negocio"}
+              className="h-full w-full object-cover"
+            />
           ) : (
-            <div className="mt-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {discounts.map((d: any) => (
-                <div
-                  key={d.id}
-                  className="mx-auto w-full max-w-sm sm:max-w-none"
-                >
-                  <DiscountCard discount={d} />
-                </div>
-              ))}
-            </div>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={src}
+              alt={d.business?.name ?? "Negocio"}
+              className="h-full w-full object-cover"
+            />
+          )
+        ) : (
+          <div className="grid h-full w-full place-content-center text-slate-400">
+            Sin imagen
+          </div>
+        )}
+
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+        {/* Botón cerrar (volver) */}
+        <a
+          href="/app"
+          className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-700 shadow-lg"
+          aria-label="Cerrar"
+        >
+          <X className="h-5 w-5" />
+        </a>
+
+        {/* Badge de estado */}
+        <span
+          className={`absolute top-4 left-4 rounded-full px-3 py-1 text-xs font-medium shadow-md ${avail.cls}`}
+        >
+          {avail.text}
+        </span>
+
+        {/* Bloque “descuento” sobre la imagen (opcional, tipo Figma) */}
+        <div className="absolute bottom-4 left-4 right-4">
+          <div className="inline-flex max-w-full flex-col rounded-2xl bg-white/90 px-4 py-3 shadow-xl">
+            <span className="mb-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+              {mainCategory}
+            </span>
+            <p className="text-sm font-semibold text-slate-800 line-clamp-2">
+              {d.title}
+            </p>
+            <p className="text-xs text-slate-600">
+              {d.business?.name ?? "Negocio asociado"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Contenido principal */}
+      <div className="container-app -mt-4 space-y-6">
+        {/* Descripción */}
+        <section className="rounded-3xl bg-white p-5 shadow-sm">
+          <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <Sparkles className="h-4 w-4 text-[var(--brand)]" />
+            Descripción
+          </h2>
+          {d.description ? (
+            <p className="text-sm text-slate-700">{d.description}</p>
+          ) : (
+            <p className="text-sm text-slate-500">
+              Este beneficio no tiene una descripción detallada.
+            </p>
           )}
         </section>
 
-        {/* espacio para bottom nav en móvil */}
-        <div className="h-20 md:hidden" />
-      </div>
+        {/* Info: fecha y límite de canjes */}
+        <section className="grid gap-3 md:grid-cols-2">
+          <div className="flex flex-col rounded-3xl border border-slate-100 bg-gradient-to-br from-sky-50 to-sky-100 p-4 shadow-sm">
+            <Calendar className="mb-2 h-5 w-5 text-sky-600" />
+            <p className="text-xs font-medium text-sky-700">
+              Válido hasta
+            </p>
+            <p className="text-sm font-semibold text-sky-900">
+              {formatFechaLarga(d.endAt)}
+            </p>
+          </div>
 
-      <BottomNav />
-    </>
-  );
-}
+          <div className="flex flex-col rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 to-fuchsia-50 p-4 shadow-sm">
+            <Tag className="mb-2 h-5 w-5 text-violet-600" />
+            <p className="text-xs font-medium text-violet-700">
+              Límite de canjes
+            </p>
+            <p className="text-sm font-semibold text-violet-900">
+              {d.limitPerUser != null
+                ? `${d.limitPerUser} por usuario`
+                : "Sin límite por usuario"}
+            </p>
+            {limitPerUser != null && (
+              <p className="mt-1 text-[11px] text-violet-700/80">
+                {mine > 0
+                  ? `Ya usaste ${mine} / ${limitPerUser}`
+                  : "Aún no has usado este beneficio."}
+              </p>
+            )}
+          </div>
+        </section>
 
-function EmptyState({ hasQuery }: { hasQuery: boolean }) {
-  return (
-    <div className="mx-auto mt-4 max-w-md rounded-2xl border bg-white p-8 text-center shadow-sm">
-      <p className="font-semibold">
-        {hasQuery
-          ? "No encontramos resultados"
-          : "No hay descuentos en esta categoría"}
-      </p>
-      <p className="mt-1 text-sm text-slate-600">
-        {hasQuery
-          ? "Prueba con otras palabras clave o limpia la búsqueda."
-          : "Explora otra categoría o vuelve más tarde."}
-      </p>
+        {/* Ubicación */}
+        <section className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-green-50 p-5 shadow-sm">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="rounded-xl bg-emerald-500 p-2">
+              <MapPin className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-emerald-900">
+                Ubicación del negocio
+              </p>
+              <p className="text-xs text-emerald-800 mt-1">
+                {d.business?.address || "Dirección no registrada."}
+              </p>
+            </div>
+          </div>
 
-      <div className="mt-4 flex items-center justify-center gap-2">
-        <a
-          href="/app"
-          className="inline-flex items-center justify-center rounded-lg bg-[var(--brand)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--brand-700)]"
-        >
-          Limpiar filtros
-        </a>
-        <a
-          href="/app?cat="
-          className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Ver todo
-        </a>
+          {googleMapsUrl ? (
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-medium text-white shadow-md transition-transform active:scale-95"
+            >
+              <MapPin className="h-4 w-4" />
+              Abrir en Google Maps
+            </a>
+          ) : (
+            <p className="rounded-xl bg-white/60 px-3 py-2 text-xs text-emerald-800">
+              Próximamente agregaremos la ubicación en Google Maps para este
+              negocio.
+            </p>
+          )}
+        </section>
+
+        {/* ¿Cómo canjear? */}
+        <section className="rounded-3xl border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-yellow-50 p-4 shadow-sm">
+          <div className="flex gap-3">
+            <div className="mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-amber-500">
+              <Award className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="mb-1 text-sm font-semibold text-amber-900">
+                ¿Cómo canjear?
+              </p>
+              <p className="text-xs text-amber-900">
+                Presenta tu tarjeta PACHACARD física con código QR en el
+                negocio. El comercio escaneará tu código para validar y
+                aplicar el descuento. No hay canje desde el portal web.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Tiers disponibles */}
+        {tiersDisponibles.length > 0 && (
+          <section className="space-y-2 rounded-3xl bg-white p-4 shadow-sm">
+            <p className="text-xs text-slate-500">
+              Disponible para:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {tiersDisponibles.map((t) => (
+                <span key={t} className={tierChipClasses(t)}>
+                  {t === "BASIC" && "BASIC"}
+                  {t === "NORMAL" && "NORMAL"}
+                  {t === "PREMIUM" && "PREMIUM"}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Barra de disponibilidad (opcional) */}
+        {usagePercentage != null && d.limitTotal != null && (
+          <section className="rounded-3xl bg-white p-4 shadow-sm">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs text-slate-500">
+                Disponibilidad total
+              </span>
+              <span className="text-xs text-slate-700">
+                {totalRestante} restantes de {d.limitTotal}
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className={`h-full rounded-full ${
+                  usagePercentage > 80
+                    ? "bg-rose-500"
+                    : usagePercentage > 50
+                    ? "bg-amber-500"
+                    : "bg-emerald-500"
+                }`}
+                style={{ width: `${usagePercentage}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[11px] text-slate-500">
+              {usagePercentage}% del límite total utilizado.
+            </p>
+          </section>
+        )}
+
+        {/* Botón volver (además de la X arriba) */}
+        <div className="pt-2">
+          <a
+            href="/app"
+            className="flex w-full items-center justify-center rounded-xl bg-slate-900 py-3 text-sm font-medium text-white shadow-md transition-transform active:scale-95"
+          >
+            Volver a mis descuentos
+          </a>
+        </div>
       </div>
     </div>
   );
