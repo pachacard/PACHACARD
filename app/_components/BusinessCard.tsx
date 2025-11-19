@@ -10,7 +10,7 @@ type BusinessLite = {
 
 export default function BusinessCard({ business }: { business: BusinessLite }) {
   const b = business;
-  const img = b.imageUrl || "/brand/business-fallback.png"; // pon un placeholder si quieres
+  const img = b.imageUrl || "/brand/business-fallback.png"; 
   const isExternal = /^https?:\/\//i.test(img);
   const count = b._count?.discounts ?? 0;
 

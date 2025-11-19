@@ -13,8 +13,8 @@ type Discount = {
   endAt?: string | Date | null;
   limitTotal?: number | null;
   usedTotal?: number | null;
-  limitPerUser?: number | null;  // 👈 se sigue usando para el estado
-  usedByUser?: number | null;    // 👈 lo llenas en /app/page.tsx
+  limitPerUser?: number | null; 
+  usedByUser?: number | null;   
   percentage?: number | null;
   business?: {
     name?: string | null;
@@ -46,7 +46,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
   );
   const isUpcoming = !!(d?.status === "pronto" || (startAt && startAt > now));
 
-  // 👉 Límite por usuario agotado
+  // Límite por usuario agotado
   const limitPerUser = d?.limitPerUser ?? null;
   const usedByUser = d?.usedByUser ?? 0;
   const userLimitUsed = !!(
@@ -101,7 +101,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
       >
         <div className="relative w-full aspect-[4/3]">
           {isExternal ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            
             <img
               src={String(hero)}
               alt={d?.business?.name ?? "Negocio"}
@@ -165,7 +165,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             )}
           </div>
 
-          {/* 👇 Antes aquí estaba el botón de copiar código, se elimina para no mostrarlo al usuario */}
+          {/* boton del codigo borrado */}
         </div>
 
         {/* Negocio y categoría */}

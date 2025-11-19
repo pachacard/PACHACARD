@@ -94,7 +94,7 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
         email,
         password,
         redirect: true,
-        callbackUrl, // <- viene del server wrapper o de ?callbackUrl
+        callbackUrl,
       });
     } finally {
       setSubmitting(false);

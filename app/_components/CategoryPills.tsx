@@ -62,7 +62,7 @@ export default function CategoryPills({
       const ca = a._count?.discounts ?? 0;
       const cb = b._count?.discounts ?? 0;
       if (cb !== ca) return cb - ca; // más descuentos primero
-      return a.name.localeCompare(b.name, "es"); // empate → por nombre
+      return a.name.localeCompare(b.name, "es"); 
     });
 
     // 4) Ordenar las que no tienen descuentos por nombre

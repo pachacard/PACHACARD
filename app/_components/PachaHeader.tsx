@@ -38,7 +38,7 @@ export default function PachaHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [hideAll]);
 
-  // ⚠️ IMPORTANTE: ningún hook después de este return condicional
+
   if (hideAll) return null;
 
   function isActive(href: string) {
