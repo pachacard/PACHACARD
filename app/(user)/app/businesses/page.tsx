@@ -18,26 +18,18 @@ export default async function NegociosPage({ searchParams }: Props) {
   const total = businesses.length;
 
   return (
-    <div className="container-app py-6 md:py-8 space-y-5">
-      {/* Encabezado tipo “Negocios Afiliados” */}
-      <header className="space-y-1">
-        <h1 className="text-xl md:text-2xl font-semibold">Negocios afiliados</h1>
-        <p className="text-sm text-slate-600">
-          {total === 0
-            ? "Aún no hay negocios con descuentos activos en esta categoría."
-            : total === 1
-            ? "1 negocio con descuentos para tu nivel."
-            : `${total} negocios con descuentos para tu nivel.`}
-        </p>
-      </header>
-
-      {/* Filtro de categorías */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-slate-700">Categorías</h2>
-          <span className="text-xs text-slate-500">
-            Filtra por tipo de beneficio
-          </span>
+    <div className="container-app py-6 md:py-8 space-y-4">
+      {/* Encabezado */}
+      <header className="space-y-4">
+        <div>
+          <h1 className="text-xl md:text-2xl font-semibold">
+            Negocios afiliados
+          </h1>
+          <p className="text-sm text-slate-600">
+            {total === 0
+              ? "Aún no hay negocios con descuentos para tu nivel."
+              : `${total} negocio${total !== 1 ? "s" : ""} con descuentos para tu nivel.`}
+          </p>
         </div>
 
         <CategoryPills
@@ -46,25 +38,43 @@ export default async function NegociosPage({ searchParams }: Props) {
           baseHref="/app/businesses"
           showAllPill
         />
-      </section>
+      </header>
 
       {/* Listado de negocios */}
       {businesses.length === 0 ? (
-        <div className="mt-4 text-sm text-slate-500">
+        <div className="card text-sm text-slate-600">
           No hay negocios para esta categoría.
         </div>
       ) : (
-        <section
-          aria-label="Negocios afiliados"
-          className="mt-2 space-y-4"
-        >
-          {businesses.map((b) => (
-            <BusinessCard key={b.id} business={b as any} />
-          ))}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between px-1 text-sm">
+            <h2 className="font-medium text-slate-900">Negocios</h2>
+            <span className="text-xs text-slate-500">
+              {businesses.length} negocio
+              {businesses.length !== 1 ? "s" : ""} afiliado
+              {businesses.length !== 1 ? "s" : ""}.
+            </span>
+          </div>
+
+          <div
+            aria-label="Listado de negocios afiliados"
+            className="
+              mt-1 space-y-4
+              md:space-y-0 md:grid md:grid-cols-2 md:gap-4
+              xl:grid-cols-3
+            "
+          >
+            {businesses.map((b) => (
+              <div
+                key={b.id}
+                className="mx-auto w-full max-w-md md:max-w-none"
+              >
+                <BusinessCard business={b as any} />
+              </div>
+            ))}
+          </div>
         </section>
       )}
-
-      <div className="h-20 md:hidden" />
     </div>
   );
 }
