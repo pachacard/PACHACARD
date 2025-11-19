@@ -1,3 +1,4 @@
+//app\(user)\app\me\QrActions.tsx
 "use client";
 
 import { useState } from "react";
