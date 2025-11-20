@@ -3,46 +3,184 @@
 @tailwind utilities;
 
 /* =========================
-   Paleta municipal (global)
+   Design tokens base (fusion Figma + PACHACARD)
    ========================= */
+
+/* Paleta principal e institucional */
 :root {
+  /* Tamaño base */
+  --font-size: 15px;
+
+  /* PACHACARD brand */
   --brand:      #8f1b1b; /* rojo institucional */
   --brand-700:  #6f1414; /* hover/activo     */
   --brand-50:   #fdecee; /* fondo sutil      */
 
-  --ink: #0f172a;        /* texto principal  */
-  --bg:  #f7f7f8;        /* fondo app        */
+  /* Figma-style tokens adaptados */
+  --background: #f7f7f8;     /* fondo app */
+  --foreground: #0f172a;     /* texto principal */
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  /* Usamos rojo muni como primary */
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+
+  --secondary: #f3f3f5;
+  --secondary-foreground: #030213;
+
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+
+  --border: rgba(0, 0, 0, 0.08);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+
+  --ring: #8f1b1b33; /* aro suave en rojo muni */
+
+  /* Radios (un poco más redondeado que Figma) */
+  --radius: 0.75rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Tema oscuro opcional por si luego usas class="dark" */
+.dark {
+  --background: #0f172a;
+  --foreground: #f9fafb;
+
+  --card: #020617;
+  --card-foreground: #e5e7eb;
+
+  --popover: #020617;
+  --popover-foreground: #e5e7eb;
+
+  --primary: #e5e7eb;
+  --primary-foreground: #111827;
+
+  --secondary: #1f2933;
+  --secondary-foreground: #e5e7eb;
+
+  --muted: #111827;
+  --muted-foreground: #9ca3af;
+
+  --accent: #111827;
+  --accent-foreground: #e5e7eb;
+
+  --destructive: #b91c1c;
+  --destructive-foreground: #fee2e2;
+
+  --border: #1f2937;
+  --input: #030712;
+
+  --ring: #4b5563;
 }
 
 /* =========================
    Base tipográfica moderna
    ========================= */
 html {
-  /* Inter (inyectada vía next/font como --font-inter) */
-  font-family: var(--font-inter), system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-  font-size: 15px; /* un toque más compacto que 16px */
+  font-family: var(--font-inter), system-ui, -apple-system, Segoe UI, Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", sans-serif;
+  font-size: var(--font-size); /* 15px */
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
 }
-body {
-  @apply bg-[var(--bg)] text-[var(--ink)];
-}
 
-h1, h2, h3, h4, h5 {
-  font-weight: 600;
-  letter-spacing: -0.015em; /* look moderno */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  /* Tipografía “por defecto” estilo Figma:
+     solo aplica donde no has puesto clases text-* explícitas */
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      @apply text-2xl;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    h2 {
+      @apply text-xl;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    h3 {
+      @apply text-lg;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    h4 {
+      @apply text-base;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
+    p,
+    label,
+    button,
+    input {
+      @apply text-sm;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+  }
 }
 
 /* =========================
    Helpers de layout
    ========================= */
-.container-app { @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl; }
-.card         { @apply rounded-xl border bg-white p-4 shadow-sm; }
-.card-body    { @apply space-y-4; }
+.container-app {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+}
 
-/* Pills/Badges */
-.badge       { @apply text-[10px] rounded px-2 py-0.5; }
-.badge-green { @apply bg-emerald-50 text-emerald-700; }
+.card {
+  @apply rounded-xl border bg-white p-4 shadow-sm;
+}
+
+.card-body {
+  @apply space-y-4;
+}
+
+/* Pills / Badges */
+.badge {
+  @apply rounded px-2 py-0.5 text-[10px];
+}
+
+.badge-green {
+  @apply bg-emerald-50 text-emerald-700;
+}
 
 /* Topbar sticky */
 .topbar {
@@ -50,51 +188,92 @@ h1, h2, h3, h4, h5 {
   color: white;
   @apply sticky top-0 z-40;
 }
-.topbar a { @apply text-white/90 hover:text-white; }
 
-/* Botones */
+.topbar a {
+  @apply text-white/90 hover:text-white;
+}
+
+/* =========================
+   Botones
+   ========================= */
+.btn {
+  @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium
+         shadow-sm border transition;
+}
+
 .btn-primary {
   background: var(--brand);
   color: #fff;
   @apply rounded-md px-3 py-2 text-sm shadow-sm transition;
 }
-.btn-primary:hover { background: var(--brand-700); }
-
-.btn {
-  @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm
-         font-medium transition shadow-sm border;
+.btn-primary:hover {
+  background: var(--brand-700);
 }
-.btn-danger { @apply border-transparent bg-red-600 text-white hover:bg-red-700; }
+
+.btn-secondary {
+  @apply border-slate-300 bg-white text-slate-800 hover:bg-slate-50;
+}
+
+.btn-outline {
+  @apply border-slate-300 bg-transparent text-slate-800 hover:bg-slate-50;
+}
+
+.btn-danger {
+  @apply border-transparent bg-red-600 text-white hover:bg-red-700;
+}
 
 /* =========================
    Formularios coherentes
    ========================= */
-.label { @apply block text-sm font-medium text-slate-700 mb-1; }
+.label {
+  @apply mb-1 block text-sm font-medium text-slate-700;
+}
 
-.input, textarea.input {
-  @apply w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm
+.input,
+textarea.input {
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
          placeholder:text-slate-400 shadow-sm
-         focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500;
+         focus:outline-none focus:ring-2 focus:ring-[var(--brand,#8f1b1b)]/20
+         focus:border-[var(--brand,#8f1b1b)];
 }
 
 .select {
-  @apply w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm
+  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
          shadow-sm
-         focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500;
+         focus:outline-none focus:ring-2 focus:ring-[var(--brand,#8f1b1b)]/20
+         focus:border-[var(--brand,#8f1b1b)];
 }
 
-.help { @apply text-xs text-slate-500 mt-1; }
-.form-grid { @apply grid md:grid-cols-2 gap-5; }
+.help {
+  @apply mt-1 text-xs text-slate-500;
+}
+
+.form-grid {
+  @apply grid gap-5 md:grid-cols-2;
+}
 
 /* =========================
    Animación sutil
    ========================= */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.animate-fadeInUp { animation: fadeInUp .35s ease-out both; }
+.animate-fadeInUp {
+  animation: fadeInUp 0.35s ease-out both;
+}
 
 /* Ocultar scrollbar horizontal (pills) */
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
