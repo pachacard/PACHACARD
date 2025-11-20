@@ -21,38 +21,30 @@ type DiscountOption = {
   category?: string | null;
 };
 
-// ====== Tema visual por TIER ======
-type TierTheme = {
-  bg: string;       // gradiente de fondo del header
-  tierChip: string; // chip de nivel
-  avatarBg: string; // círculo con la inicial
-};
+function getTierTheme(tier?: string) {
+  const t = (tier ?? "").toUpperCase();
 
-function getTierTheme(tier?: string | null): TierTheme {
-  switch (tier) {
-    case "PREMIUM":
-      // Tarjeta negra / gris oscuro
-      return {
-        bg: "from-slate-900 via-slate-900 to-black",
-        tierChip: "bg-slate-800/70 text-amber-200",
-        avatarBg: "bg-white/10 text-white",
-      };
-    case "NORMAL":
-      // Rojo institucional
-      return {
-        bg: "from-[#b42020] to-[#8f1b1b]",
-        tierChip: "bg-white/10 text-white",
-        avatarBg: "bg-white/10 text-white",
-      };
-    case "BASIC":
-    default:
-      // Verde para básico
-      return {
-        bg: "from-emerald-600 to-emerald-500",
-        tierChip: "bg-white/10 text-white",
-        avatarBg: "bg-white/10 text-white",
-      };
+  // BASIC: verde
+  if (t === "BASIC") {
+    return {
+      headerBg: "bg-gradient-to-r from-emerald-600 to-emerald-700",
+      chipBg: "bg-white/10 text-white",
+    };
   }
+
+  // NORMAL: rojo institucional
+  if (t === "NORMAL") {
+    return {
+      headerBg: "bg-gradient-to-r from-[#9a1e1e] to-[#7e1515]",
+      chipBg: "bg-white/10 text-white",
+    };
+  }
+
+  // PREMIUM (por defecto si llega otro valor): negro/dark
+  return {
+    headerBg: "bg-gradient-to-r from-[#111827] to-[#020617]", // slate-900 → casi negro
+    chipBg: "bg-white/10 text-white",
+  };
 }
 
 export default function Redeem() {
@@ -103,9 +95,7 @@ export default function Redeem() {
   }, []);
 
   const tokenOk = !!inspect?.ok;
-  const tier = inspect?.user?.tier ?? null;
-  const tierTheme = getTierTheme(tier);
-  const userInitial = (inspect?.user?.name || "?").slice(0, 1).toUpperCase();
+  const tierTheme = getTierTheme(inspect?.user?.tier);
 
   // Carga automática de descuentos cuando cambia el código de negocio
   useEffect(() => {
@@ -223,10 +213,12 @@ export default function Redeem() {
   return (
     <div className="min-h-screen bg-slate-50 py-6 md:py-10">
       <div className="mx-auto w-full max-w-4xl px-4">
-        {/* HEADER TIPO TARJETA (según tier) */}
+        {/* HEADER DEL USUARIO (dinámico por tier) */}
         <header
-          className={`rounded-2xl bg-gradient-to-r p-4 text-white shadow-md md:p-6 ${
-            tokenOk ? tierTheme.bg : "from-rose-600 to-rose-500"
+          className={`rounded-2xl p-4 md:p-6 shadow-md text-white ${
+            tokenOk
+              ? tierTheme.headerBg // gradient según BASIC / NORMAL / PREMIUM
+              : "bg-rose-600"
           }`}
         >
           {!inspect ? (
@@ -234,19 +226,17 @@ export default function Redeem() {
           ) : tokenOk && inspect.user ? (
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold uppercase ${tierTheme.avatarBg}`}
-                >
-                  {userInitial}
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/10 text-lg font-semibold">
+                  {(inspect.user.name || "?").slice(0, 1).toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.12em] opacity-80">
-                    Cuenta PACHACARD
+                  <p className="text-xs uppercase tracking-[0.12em] opacity-80">
+                    Cuenta Pachacard
                   </p>
-                  <p className="text-base font-semibold leading-tight md:text-lg">
+                  <p className="text-base md:text-lg font-semibold leading-tight">
                     {inspect.user.name}
                   </p>
-                  <p className="text-xs opacity-90 md:text-sm">
+                  <p className="text-xs md:text-sm opacity-90">
                     {inspect.user.email}
                   </p>
                 </div>
@@ -254,12 +244,14 @@ export default function Redeem() {
 
               <div className="flex flex-col items-start gap-2 md:items-end">
                 <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${tierTheme.tierChip}`}
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide ${tierTheme.chipBg}`}
                 >
                   Nivel de membresía:{" "}
-                  <span className="ml-1">{inspect.user.tier}</span>
+                  <span className="ml-1 font-semibold">
+                    {inspect.user.tier}
+                  </span>
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/95 px-3 py-1 text-[11px] font-semibold text-emerald-800 shadow-sm">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1 text-xs font-medium shadow-sm">
                   <CheckCircle2 className="h-4 w-4" />
                   Tarjeta válida
                 </span>
@@ -295,7 +287,7 @@ export default function Redeem() {
                 Código de negocio
               </label>
               <input
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none placeholder:text-slate-400 focus:border-[var(--brand,#7e1515)] focus:ring-2 focus:ring-[var(--brand,#7e1515)]/20"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-brand/0 focus:border-[var(--brand,#7e1515)] focus:ring-2 focus:ring-[var(--brand,#7e1515)]/20"
                 placeholder="Ej: RESTO"
                 value={businessCode}
                 onChange={(e) => setB(e.target.value.toUpperCase())}
