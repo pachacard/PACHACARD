@@ -25,12 +25,12 @@ function getTierTheme(tier?: string) {
   const t = (tier ?? "").toUpperCase();
 
   // BASIC: verde
-  if (t === "BASIC") {
-    return {
-      headerBg: "bg-gradient-to-r from-emerald-600 to-emerald-700",
-      chipBg: "bg-white/10 text-white",
-    };
-  }
+ if (t === "BASIC") {
+  return {
+    headerBg: "bg-gradient-to-r from-amber-500 to-amber-600",
+    chipBg: "bg-white/10 text-white",
+  };
+}
 
   // NORMAL: rojo institucional
   if (t === "NORMAL") {
