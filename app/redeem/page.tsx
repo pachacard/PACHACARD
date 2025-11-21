@@ -24,26 +24,27 @@ type DiscountOption = {
 function getTierTheme(tier?: string) {
   const t = (tier ?? "").toUpperCase();
 
-  // BASIC: verde
- if (t === "BASIC") {
-  return {
-    headerBg: "bg-gradient-to-r from-amber-500 to-amber-600",
-    chipBg: "bg-white/10 text-white",
-  };
-}
+  // BASIC: amarillo mostaza (un poco oscuro)
+  if (t === "BASIC") {
+    return {
+      headerBg: "bg-gradient-to-r from-[#eab308] to-[#a16207]", // mostaza
+      membershipChip: "bg-white/10 text-white", // chip claro normal
+    };
+  }
 
   // NORMAL: rojo institucional
   if (t === "NORMAL") {
     return {
       headerBg: "bg-gradient-to-r from-[#9a1e1e] to-[#7e1515]",
-      chipBg: "bg-white/10 text-white",
+      membershipChip: "bg-white/10 text-white",
     };
   }
 
-  // PREMIUM (por defecto si llega otro valor): negro/dark
+  // PREMIUM (por defecto): negro/dark + chip dorado
   return {
     headerBg: "bg-gradient-to-r from-[#111827] to-[#020617]", // slate-900 → casi negro
-    chipBg: "bg-white/10 text-white",
+    membershipChip:
+      "bg-amber-400/95 text-amber-950 shadow-sm", // dorado, exclusivo
   };
 }
 
@@ -216,9 +217,7 @@ export default function Redeem() {
         {/* HEADER DEL USUARIO (dinámico por tier) */}
         <header
           className={`rounded-2xl p-4 md:p-6 shadow-md text-white ${
-            tokenOk
-              ? tierTheme.headerBg // gradient según BASIC / NORMAL / PREMIUM
-              : "bg-rose-600"
+            tokenOk ? tierTheme.headerBg : "bg-rose-600"
           }`}
         >
           {!inspect ? (
@@ -243,14 +242,17 @@ export default function Redeem() {
               </div>
 
               <div className="flex flex-col items-start gap-2 md:items-end">
+                {/* Chip de nivel de membresía (dorado solo para PREMIUM) */}
                 <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide ${tierTheme.chipBg}`}
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${tierTheme.membershipChip}`}
                 >
-                  Nivel de membresía:{" "}
-                  <span className="ml-1 font-semibold">
+                  NIVEL DE MEMBRESÍA:{" "}
+                  <span className="ml-1 font-bold">
                     {inspect.user.tier}
                   </span>
                 </span>
+
+                {/* Chip de tarjeta válida */}
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1 text-xs font-medium shadow-sm">
                   <CheckCircle2 className="h-4 w-4" />
                   Tarjeta válida
