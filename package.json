@@ -10,7 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "seed": "tsx prisma/seed.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed:loadtest-users": "tsx scripts/seed-loadtest-users.ts"
   },
   "dependencies": {
     "@auth/core": "0.35.3",
@@ -39,6 +40,7 @@
     "postcss": "8.5.6",
     "prisma": "5.22.0",
     "tailwindcss": "3.4.17",
+    "tree-cli": "^0.6.7",
     "ts-node": "^10.9.2",
     "tsx": "4.20.5",
     "typescript": "5.9.2",
@@ -47,4 +49,5 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   }
+
 }

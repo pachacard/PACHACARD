@@ -130,7 +130,6 @@ export default async function Page({ searchParams }: Props) {
   // Filtro por búsqueda
   const filtered = filterByQuery(discountsWithUsage, query);
 
-  // 👉 Orden:
   //    1. Disponibles primero, agotados/límite usado al final.
   //    2. Entre disponibles, por fecha de expiración (endAt más cercana primero).
   //    3. Fallback: índice original del backend.

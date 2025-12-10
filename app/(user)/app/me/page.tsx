@@ -80,9 +80,10 @@ export default async function MePage() {
 
   const qr = await buildStableQr(user);
 
-  const displayToken = `PACHA-${String(user.tier ?? "USER")}-${String(
-    user.id
-  ).slice(0, 6)}`.toUpperCase();
+  // 🔢 Nuevo: número de canjes realizados por este usuario
+  const redemptionsCount = await prisma.redemption.count({
+    where: { userId: user.id },
+  });
 
   return (
     <div className="container-app py-6 md:py-8 space-y-6">
@@ -164,14 +165,16 @@ export default async function MePage() {
                 </div>
               </div>
 
+              {/* 🔁 Reemplazo del "Token QR" por "Canjes realizados" */}
               <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[var(--brand,#7e1515)]">
-                  🔐
+                  🎟️
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs text-slate-500">Token QR</p>
+                  <p className="text-xs text-slate-500">Canjes realizados</p>
                   <p className="truncate text-sm font-mono text-slate-900">
-                    {displayToken}
+                    {redemptionsCount}{" "}
+                    {redemptionsCount === 1 ? "canje" : "canjes"}
                   </p>
                 </div>
               </div>
@@ -231,8 +234,8 @@ export default async function MePage() {
                 o dudas sobre tus beneficios, comunícate con nosotros.
               </p>
               <ul className="space-y-1">
-                <li>• Central telefónica: (01) 230-2121</li>
-                <li>• Correo de consultas: consultas@munipachacamac.gob.pe</li>
+                <li>• Central telefónica: 921561684</li>
+                <li>• Correo de consultas: pachacardmuni@gmail.com</li>
               </ul>
             </div>
           </div>
@@ -242,7 +245,7 @@ export default async function MePage() {
         <div className="card">
           <div className="card-body">
             <h2 className="card-title mb-1">Mi QR</h2>
-            <p className="text-xs sm:text-sm text-slate-600">
+          <p className="text-xs sm:text-sm text-slate-600">
               Este código es el que se imprime en tu tarjeta{" "}
               <strong>PACHACARD</strong>. Para canjear en comercios, usa siempre
               tu tarjeta física; el QR web es solo de referencia.
