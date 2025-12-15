@@ -32,17 +32,39 @@ const notMixedTier = {
 };
 
 /* ----------------------------------------------------------------------------
- * 1) Categorías (ordenadas) con conteo de descuentos
- *    Nota: el _count cuenta TODOS los descuentos relacionados en la tabla puente
- *    (no filtra por vigencia/tier). Es lo más eficiente para las “píldoras”.
+ * 1) Categorías (ordenadas) con conteo de descuentos VISIBLES para el tier
+ *    - Mismo filtro que se usa para obtener los descuentos del usuario.
+ *    - El _count.discounts se calcula a partir de los descuentos filtrados.
  * -------------------------------------------------------------------------- */
-export async function getCategoriesWithCountsForUser(_tier?: Tier) {
-  return prisma.category.findMany({
+export async function getCategoriesWithCountsForUser(tier?: Tier) {
+  const discountWhere = {
+    ...publishedNowWhere(),
+    ...tierWhere(tier),
+    ...notMixedTier,
+  };
+
+  const categories = await prisma.category.findMany({
     orderBy: { name: "asc" },
     include: {
-      _count: { select: { discounts: true } }, // Category -> DiscountCategory[]
+      discounts: {
+        where: {
+          // Category -> DiscountCategory -> Discount
+          discount: discountWhere,
+        },
+        select: {
+          discountId: true, // solo necesitamos saber cuántos hay
+        },
+      },
     },
   });
+
+  // añadimos _count.discounts basado en los descuentos visibles para este tier
+  return categories.map((cat) => ({
+    ...cat,
+    _count: {
+      discounts: cat.discounts.length,
+    },
+  })) as any;
 }
 
 /* ----------------------------------------------------------------------------
