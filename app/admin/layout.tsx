@@ -1,7 +1,7 @@
 // app/admin/layout.tsx
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import AdminHeader from "@/app/_components/AdminHeader";
+import AdminHeader from "@/components/pachacard/AdminHeader";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Admin · PACHACARD" };
 

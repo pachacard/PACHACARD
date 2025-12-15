@@ -5,8 +5,8 @@ import {
   getCategoriesWithCounts,
   getDiscountsByCategorySlug,
 } from "@/lib/db";
-import CategoryPills from "@/app/_components/CategoryPills";
-import DiscountCard from "@/app/_components/DiscountCard";
+import CategoryPills from "@/components/pachacard/CategoryPills";
+import DiscountCard from "@/components/pachacard/DiscountCard";
 
 type Props = { searchParams?: { cat?: string } };
 

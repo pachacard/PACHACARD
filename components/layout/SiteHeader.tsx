@@ -1,7 +1,7 @@
 // components/SiteHeader.tsx
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import LogoutButton from "@/components/LogoutButton";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 export default async function SiteHeader() {
   const session = await auth();

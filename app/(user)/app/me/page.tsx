@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import * as jose from "jose";
 import QRCode from "qrcode";
 import { redirect } from "next/navigation";
-import SignOutButton from "@/app/_components/SignOutButton";
+import SignOutButton from "@/components/auth/SignOutButton";
 import QrActions from "./QrActions";
 
 export const dynamic = "force-dynamic";

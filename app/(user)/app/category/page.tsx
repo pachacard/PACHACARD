@@ -1,5 +1,5 @@
 import { getCategoriesWithCounts } from "@/lib/db";
-import { CategoryCard } from "@/app/_components";
+import { CategoryCard } from "@/components/pachacard";
 
 export const metadata = { title: "Categorías | PACHACARD" };
 

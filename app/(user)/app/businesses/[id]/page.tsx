@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import DiscountCard from "@/app/_components/DiscountCard";
+import DiscountCard from "@/components/pachacard/DiscountCard";
 import { MapPin } from "lucide-react";
 
 export const dynamic = "force-dynamic";

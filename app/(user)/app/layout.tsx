@@ -1,5 +1,5 @@
 // app/(user)/app/layout.tsx
-import BottomNav from "@/app/_components/BottomNav";
+import BottomNav from "@/components/pachacard/BottomNav";
 
 export default function AppSectionLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -7,9 +7,9 @@ import {
   getDiscountsByCategorySlugForUser,
 } from "@/lib/db";
 
-import CategoryPills from "@/app/_components/CategoryPills";
-import DiscountCard from "@/app/_components/DiscountCard";
-import BottomNav from "@/app/_components/BottomNav";
+import CategoryPills from "@/components/pachacard/CategoryPills";
+import DiscountCard from "@/components/pachacard/DiscountCard";
+import BottomNav from "@/components/pachacard/BottomNav";
 
 export const dynamic = "force-dynamic";
 

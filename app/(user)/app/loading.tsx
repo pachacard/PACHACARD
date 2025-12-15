@@ -1,4 +1,4 @@
-import SkeletonCard from "@/app/_components/SkeletonCard";
+import SkeletonCard from "@/components/pachacard/SkeletonCard";
 
 export default function LoadingDiscounts() {
   return (

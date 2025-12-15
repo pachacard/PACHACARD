@@ -1,7 +1,7 @@
 // app/(user)/app/businesses/page.tsx
 import { getBusinesses, getCategoriesWithCounts } from "@/lib/db";
-import CategoryPills from "@/app/_components/CategoryPills";
-import BusinessCard from "@/app/_components/BusinessCard";
+import CategoryPills from "@/components/pachacard/CategoryPills";
+import BusinessCard from "@/components/pachacard/BusinessCard";
 
 export const dynamic = "force-dynamic";
 

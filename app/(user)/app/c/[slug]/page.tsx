@@ -6,7 +6,7 @@ import {
   getCategoriesWithCounts,
   getDiscountsByCategorySlug,
 } from "@/lib/db";
-import DiscountCard from "@/app/_components/DiscountCard";
+import DiscountCard from "@/components/pachacard/DiscountCard";
 
 type Props = { params: { slug: string } };
 
