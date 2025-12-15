@@ -30,7 +30,7 @@ export default async function NewDiscountPage({ searchParams }: Props) {
     }),
   ]);
 
-  // ✅ Si venimos con ?from=, prellenamos el form usando ese descuento
+  //  Si venimos con ?from=, prellenamos el form usando ese descuento
   //    pero forzamos: sin id, código vacío y estado DRAFT
   const itemForForm = source
     ? ({

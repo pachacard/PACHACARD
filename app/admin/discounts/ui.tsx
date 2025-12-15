@@ -372,7 +372,7 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
                   className="btn btn-secondary"
                   onClick={duplicateAsNew}
                 >
-                  Duplicar como nuevo
+                  Duplicar
                 </button>
 
                 <button
