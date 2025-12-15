@@ -1,3 +1,4 @@
+// app/admin/discounts/ui.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -51,7 +52,7 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
     limitPerUser: item?.limitPerUser ?? "",
     limitTotal: item?.limitTotal ?? "",
     businessId: (item as any)?.businessId ?? "",
-    // 👇 NUEVO: si Discount.images es string con una URL, precárgala aquí
+    // Imagen del descuento (usamos Discount.images como string URL)
     imageUrl:
       (typeof (item as any)?.images === "string" ? (item as any).images : "") ??
       "",
@@ -89,9 +90,9 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
       tierBasic: tier === "BASIC",
       tierNormal: tier === "NORMAL",
       tierPremium: tier === "PREMIUM",
-      // 👇 importante: enviamos las categorías elegidas
+      // categorías elegidas (ids)
       categoryIds: selectedCats,
-      // 👇 NUEVO: guardamos 1 URL en Discount.images
+      // guardamos 1 URL en Discount.images
       images: f.imageUrl?.trim() || null,
     };
 
@@ -125,6 +126,12 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
       method: "DELETE",
     });
     if (r.ok) location.href = "/admin/discounts";
+  }
+
+  // ✅ NUEVO: ir a "Nuevo descuento" precargando los datos de este
+  async function duplicateAsNew() {
+    if (!isEdit || !item?.id) return;
+    location.href = `/admin/discounts/new?from=${item.id}`;
   }
 
   return (
@@ -179,7 +186,7 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
             />
           </div>
 
-          {/* 👇 NUEVO: Imagen del descuento (URL) */}
+          {/* Imagen del descuento (URL) */}
           <div>
             <label className="label">Imagen del descuento (URL)</label>
             <div className="flex items-center gap-3">
@@ -314,7 +321,11 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
                 >
                   Seleccionar todo
                 </button>
-                <button type="button" className="btn" onClick={clearCats}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={clearCats}
+                >
                   Limpiar
                 </button>
               </div>
@@ -346,13 +357,32 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
 
           {/* Acciones */}
           <div className="flex gap-3">
-            <button className="btn btn-primary" onClick={save}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={save}
+            >
               {isEdit ? "Guardar" : "Crear"}
             </button>
+
             {isEdit && (
-              <button className="btn btn-danger" onClick={removeItem}>
-                Eliminar
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={duplicateAsNew}
+                >
+                  Duplicar como nuevo
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={removeItem}
+                >
+                  Eliminar
+                </button>
+              </>
             )}
           </div>
         </div>

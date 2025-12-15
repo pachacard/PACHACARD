@@ -1,3 +1,4 @@
+//app\admin\discounts\[id]\page.tsx
 import { prisma } from "@/lib/prisma";
 import DiscountForm from "../ui";
 
