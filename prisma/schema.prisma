@@ -11,40 +11,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/*
-  MODELO: User
-  Se registra a los titulares que ingresan al portal (ciudadanos) y también a administradores.
-  El QR se controla con tokenVersion para poder “rotarlo” cuando se invalida una tarjeta.
-*/
+// MODELO: User
+// Se registra a los titulares que ingresan al portal (ciudadanos) y también a administradores.
+// El QR se controla con tokenVersion para poder “rotarlo” cuando se invalida una tarjeta.
 model User {
-  id           String   @id @default(cuid())     // Se usa cuid como id único.
-  email        String   @unique                  // Se evita duplicidad por correo.
-  name         String                           // Se guarda nombre del usuario.
-  passwordHash String                           // Se guarda hash de contraseña (no texto plano).
-  tier         String                           // Se guarda nivel: BASIC | NORMAL | PREMIUM (string por simplicidad).
-  status       String   @default("ACTIVE")       // Se controla estado: ACTIVE / INACTIVE, etc.
-  role         String   @default("USER")         // Se controla rol: USER / ADMIN.
-  tokenVersion Int      @default(1)              // Se incrementa para invalidar tokens/QR anteriores.
-  createdAt    DateTime @default(now())          // Se registra fecha de alta.
-  updatedAt    DateTime @updatedAt               // Se actualiza automáticamente en cada update.
+  id           String   @id @default(cuid())   // Se usa cuid como id único.
+  email        String   @unique                // Se evita duplicidad por correo.
+  name         String                          // Se guarda nombre del usuario.
+  passwordHash String                          // Se guarda hash de contraseña (no texto plano).
+  tier         String                          // Se guarda nivel: BASIC | NORMAL | PREMIUM (string por simplicidad).
+  status       String   @default("ACTIVE")     // Se controla estado: ACTIVE / INACTIVE, etc.
+  role         String   @default("USER")       // Se controla rol: USER / ADMIN.
+  tokenVersion Int      @default(1)            // Se incrementa para invalidar tokens/QR anteriores.
+  createdAt    DateTime @default(now())        // Se registra fecha de alta.
+  updatedAt    DateTime @updatedAt             // Se actualiza automáticamente en cada update.
 
   // Se relaciona con los canjes realizados.
   redemptions Redemption[]
 }
 
-/*
-  MODELO: Business
-  Se registran los negocios afiliados al programa PACHACARD.
-  Se guarda imagen/logo y un link de Google Maps para el botón de ubicación.
-*/
+// MODELO: Business
+// Se registran los negocios afiliados al programa PACHACARD.
+// Se guarda imagen/logo y un link de Google Maps para el botón de ubicación.
 model Business {
-  id      String  @id @default(cuid())      // Se usa cuid como id único.
-  code    String  @unique                   // Se usa código corto (para panel/admin y filtros).
-  name    String                           // Se guarda nombre comercial.
-  ruc     String?                          // Se guarda RUC (opcional).
-  address String?                          // Se guarda dirección (opcional).
-  contact String?                          // Se guarda contacto (opcional).
-  status  String  @default("ACTIVE")       // Se controla estado del negocio.
+  id      String  @id @default(cuid())    // Se usa cuid como id único.
+  code    String  @unique                 // Se usa código corto (para panel/admin y filtros).
+  name    String                          // Se guarda nombre comercial.
+  ruc     String?                         // Se guarda RUC (opcional).
+  address String?                         // Se guarda dirección (opcional).
+  contact String?                         // Se guarda contacto (opcional).
+  status  String  @default("ACTIVE")      // Se controla estado del negocio.
 
   // Se guarda logo/imagen del negocio (opcional).
   imageUrl String?
@@ -52,29 +48,29 @@ model Business {
   // Se guarda URL directa a Google Maps (opcional).
   googleMapsUrl String?
 
-  createdAt DateTime @default(now())       // Se registra fecha de alta.
-  updatedAt DateTime @updatedAt            // Se actualiza automáticamente.
+  createdAt DateTime @default(now())      // Se registra fecha de alta.
+  updatedAt DateTime @updatedAt           // Se actualiza automáticamente.
 
   // Relaciones:
-  discounts   Discount[]                   // Se relaciona con descuentos que ofrece.
-  categories  BusinessCategory[]           // Se relaciona con categorías (N:M vía tabla puente).
-  redemptions Redemption[]                 // Se relaciona con canjes hechos en este negocio.
+  discounts   Discount[]                  // Se relaciona con descuentos que ofrece.
+  categories  BusinessCategory[]          // Se relaciona con categorías (N:M vía tabla puente).
+  redemptions Redemption[]                // Se relaciona con canjes hechos en este negocio.
 }
 
-/*
-  MODELO: Discount
-  Se registran los descuentos publicados.
-  La visibilidad se controla por tier (exactamente uno debería estar activo).
-  La vigencia se controla con startAt / endAt.
-  Se controla stock global con limitTotal/usedTotal y por usuario con limitPerUser.
-*/
+// MODELO: Discount
+// Se registran los descuentos publicados.
+// La visibilidad se controla por tier (idealmente uno activo).
+// La vigencia se controla con startAt / endAt.
+// Se controla stock global con limitTotal/usedTotal y por usuario con limitPerUser.
 model Discount {
-  id          String  @id @default(cuid())      // Se usa cuid como id único.
-  code        String  @unique                   // Se evita duplicidad por código.
-  title       String                           // Se guarda título del descuento.
-  description String                           // Se guarda descripción.
-  images      String?                          // Se mantiene por compatibilidad (si antes se usaba).
-  imageUrl    String?                          // Se guarda imagen principal (opcional).
+  id          String  @id @default(cuid())    // Se usa cuid como id único.
+  code        String  @unique                 // Se evita duplicidad por código.
+  title       String                          // Se guarda título del descuento.
+  description String                          // Se guarda descripción.
+
+  // Campos de imagen (compatibilidad)
+  images   String? // por compatibilidad si aún lo usas
+  imageUrl String? // imagen principal del descuento (opcional)
 
   // Se controla visibilidad por tier.
   tierBasic   Boolean @default(false)
@@ -86,12 +82,12 @@ model Discount {
   endAt   DateTime
 
   // Se controlan límites y conteo global.
-  limitPerUser Int?                            // Se limita canje por usuario (opcional).
-  limitTotal   Int?                            // Se limita stock total (opcional).
-  usedTotal    Int  @default(0)                // Se lleva contador global de canjes.
+  limitPerUser Int?       // Se limita canje por usuario (opcional).
+  limitTotal   Int?       // Se limita stock total (opcional).
+  usedTotal    Int  @default(0) // Se lleva contador global de canjes.
 
-  terms  String?                               // Se guardan términos (opcional).
-  status String  @default("DRAFT")             // Se controla estado: DRAFT / PUBLISHED / ARCHIVED.
+  terms  String?               // Se guardan términos (opcional).
+  status String  @default("DRAFT") // Se controla estado: DRAFT / PUBLISHED / ARCHIVED.
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -111,20 +107,18 @@ model Discount {
   @@index([businessId])
 }
 
-/*
-  MODELO: Redemption
-  Se registran los canjes (auditoría).
-  Cada canje apunta a un usuario, un descuento y un negocio.
-  La fecha se guarda en redeemedAt y channel indica el canal (por defecto "qr").
-*/
+// MODELO: Redemption
+// Se registran los canjes (auditoría).
+// Cada canje apunta a un usuario, un descuento y un negocio.
+// La fecha se guarda en redeemedAt y channel indica el canal (por defecto "qr").
 model Redemption {
-  id         String   @id @default(cuid())      // Se usa cuid como id único.
-  userId     String                             // FK a User.
-  discountId String                             // FK a Discount.
-  businessId String                             // FK a Business.
-  redeemedAt DateTime @default(now())            // Se registra cuándo se canjeó.
-  channel    String   @default("qr")             // Se registra canal (qr / otros a futuro).
-  meta       String?                            // Se guarda metadata opcional (texto/json string).
+  id         String   @id @default(cuid()) // Se usa cuid como id único.
+  userId     String                         // FK a User.
+  discountId String                         // FK a Discount.
+  businessId String                         // FK a Business.
+  redeemedAt DateTime @default(now())       // Se registra cuándo se canjeó.
+  channel    String   @default("qr")        // Se registra canal (qr / otros a futuro).
+  meta       String?                        // Se guarda metadata opcional (texto/json string).
 
   // Relaciones con cascada para no dejar registros huérfanos.
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -137,16 +131,14 @@ model Redemption {
   @@index([businessId])
 }
 
-/*
-  MODELO: Category
-  Se registran categorías para ordenar descuentos y negocios.
-  slug se usa en rutas (URL amigable).
-*/
+// MODELO: Category
+// Se registran categorías para ordenar descuentos y negocios.
+// slug se usa en rutas (URL amigable).
 model Category {
   id        String   @id @default(cuid())
-  slug      String   @unique                    // Se usa como identificador en URL.
-  name      String                             // Se guarda nombre visible.
-  icon      String?                            // Se guarda icono (opcional).
+  slug      String   @unique                // Se usa como identificador en URL.
+  name      String                          // Se guarda nombre visible.
+  icon      String?                         // Se guarda icono (opcional).
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -157,10 +149,8 @@ model Category {
   @@index([slug])
 }
 
-/*
-  TABLA PUENTE: DiscountCategory (N:M Discount ↔ Category)
-  Se usa PK compuesta para que no se repita el mismo par descuento-categoría.
-*/
+// TABLA PUENTE: DiscountCategory (N:M Discount ↔ Category)
+// Se usa PK compuesta para que no se repita el mismo par descuento-categoría.
 model DiscountCategory {
   discountId String
   categoryId String
@@ -172,10 +162,8 @@ model DiscountCategory {
   @@index([categoryId])
 }
 
-/*
-  TABLA PUENTE: BusinessCategory (N:M Business ↔ Category)
-  Se usa PK compuesta para permitir upsert por (businessId, categoryId).
-*/
+// TABLA PUENTE: BusinessCategory (N:M Business ↔ Category)
+// Se usa PK compuesta para permitir upsert por (businessId, categoryId).
 model BusinessCategory {
   businessId String
   categoryId String
