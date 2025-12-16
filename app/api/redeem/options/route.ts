@@ -85,7 +85,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // 2) Traer usuario real desde BD (no confiar solo en el token)
+    // 2) Traer usuario real desde BD (no confiar solo en el token s)
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.status !== "ACTIVE") {
       return NextResponse.json(
