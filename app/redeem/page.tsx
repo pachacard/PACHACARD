@@ -1,7 +1,6 @@
-// app/redeem/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 
 type InspectResp = {
@@ -20,18 +19,23 @@ type DiscountOption = {
   category?: string | null;
 };
 
+type RedeemPostResp = {
+  ok: boolean;
+  message: string;
+  redemptionId?: string;
+  remainingAfter?: number | null; // <- NUEVO (si el backend lo retorna)
+};
+
 function getTierTheme(tier?: string) {
   const t = (tier ?? "").toUpperCase();
 
-  // BASIC: amarillo mostaza (un poco oscuro)
   if (t === "BASIC") {
     return {
-      headerBg: "bg-gradient-to-r from-[#eab308] to-[#a16207]", // mostaza
-      membershipChip: "bg-white/10 text-white", // chip claro normal
+      headerBg: "bg-gradient-to-r from-[#eab308] to-[#a16207]",
+      membershipChip: "bg-white/10 text-white",
     };
   }
 
-  // NORMAL: rojo institucional
   if (t === "NORMAL") {
     return {
       headerBg: "bg-gradient-to-r from-[#9a1e1e] to-[#7e1515]",
@@ -39,12 +43,14 @@ function getTierTheme(tier?: string) {
     };
   }
 
-  // PREMIUM (por defecto): negro/dark + chip dorado
   return {
-    headerBg: "bg-gradient-to-r from-[#111827] to-[#020617]", // slate-900 → casi negro
-    membershipChip:
-      "bg-amber-400/95 text-amber-950 shadow-sm", // dorado, exclusivo
+    headerBg: "bg-gradient-to-r from-[#111827] to-[#020617]",
+    membershipChip: "bg-amber-400/95 text-amber-950 shadow-sm",
   };
+}
+
+function normCode(v: string) {
+  return (v ?? "").trim().toUpperCase();
 }
 
 export default function Redeem() {
@@ -60,8 +66,20 @@ export default function Redeem() {
   const [ok, setOk] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Para evitar doble canje accidental del mismo código
-  const [lastRedeem, setLastRedeem] = useState<{
+  /**
+   * NUEVO:
+   * Para que la confirmación salga SOLO a partir del 2do canje en esta pantalla.
+   * - Primer canje: NO pregunta (flujo rápido).
+   * - Segundo canje y siguientes: pide confirmación en modal bonito.
+   */
+  const [hasRedeemedOnce, setHasRedeemedOnce] = useState(false);
+
+  /**
+   * NUEVO:
+   * Modal de confirmación (en vez de window.confirm)
+   */
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingRedeem, setPendingRedeem] = useState<{
     businessCode: string;
     discountCode: string;
   } | null>(null);
@@ -97,11 +115,25 @@ export default function Redeem() {
   const tokenOk = !!inspect?.ok;
   const tierTheme = getTierTheme(inspect?.user?.tier);
 
-  // Carga automática de descuentos cuando cambia el código de negocio
+  // helper para sacar % del label si no viene en el payload
+  const getPercentage = (d: DiscountOption): number | null => {
+    if (typeof d.percentage === "number") return d.percentage;
+    const match = d.label.match(/(\d+)\s*%/);
+    return match ? Number(match[1]) : null;
+  };
+
+  const selectedDiscount = useMemo(
+    () => discounts.find((d) => d.code === discountCode),
+    [discounts, discountCode]
+  );
+
+  /**
+   * Carga automática de descuentos cuando cambia el código de negocio
+   */
   useEffect(() => {
     if (!t || !tokenOk) return;
 
-    const codeTrim = businessCode.trim().toUpperCase();
+    const codeTrim = normCode(businessCode);
 
     if (!codeTrim) {
       setDiscounts([]);
@@ -112,19 +144,35 @@ export default function Redeem() {
     }
 
     const handle = setTimeout(() => {
-      void loadOptions(t, codeTrim);
-    }, 500); // medio segundo de espera después de dejar de tipear
+      void loadOptions(t, codeTrim, { keepSelected: false, keepMessage: true });
+    }, 500);
 
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessCode, t, tokenOk]);
 
-  async function loadOptions(token: string, code: string) {
+  /**
+   * loadOptions (mejorado):
+   * - Permite "refrescar" descuentos sin resetear selección ni borrar mensajes.
+   * - Lo usamos después de canjear para simular "F5" sin recargar página.
+   */
+  async function loadOptions(
+    token: string,
+    code: string,
+    opts?: { keepSelected?: boolean; keepMessage?: boolean }
+  ) {
+    const keepSelected = !!opts?.keepSelected;
+    const keepMessage = !!opts?.keepMessage;
+
+    const prevSelected = keepSelected ? discountCode : "";
+
     setLoadingOptions(true);
-    setM(null);
-    setOk(null);
-    setDiscounts([]);
-    setD("");
+
+    // Si NO queremos mantener mensajes, limpiamos aquí
+    if (!keepMessage) {
+      setM(null);
+      setOk(null);
+    }
 
     try {
       const url = `/api/redeem/options?token=${encodeURIComponent(
@@ -137,78 +185,121 @@ export default function Redeem() {
       if (!j.ok) {
         setM(j.message || "No se pudieron cargar los descuentos.");
         setOk(false);
+        setDiscounts([]);
+        if (!keepSelected) setD("");
         return;
       }
 
-      setDiscounts(j.discounts || []);
-      if (!j.discounts || j.discounts.length === 0) {
+      const incoming: DiscountOption[] = j.discounts || [];
+      setDiscounts(incoming);
+
+      // Mantener selección si todavía existe
+      if (keepSelected && prevSelected) {
+        const stillThere = incoming.some((d) => d.code === prevSelected);
+        setD(stillThere ? prevSelected : "");
+      } else {
+        setD("");
+      }
+
+      if (incoming.length === 0) {
         setM("No hay descuentos disponibles para este negocio.");
         setOk(false);
       }
     } catch {
       setM("Error al cargar los descuentos.");
       setOk(false);
+      setDiscounts([]);
+      if (!keepSelected) setD("");
     } finally {
       setLoadingOptions(false);
     }
   }
 
-  async function go() {
+  /**
+   * Realiza el POST real del canje.
+   * - Si ok: hace "soft refresh" de los descuentos (F5 sin recargar página).
+   */
+  async function performRedeem(codeTrim: string, discCode: string) {
     if (!t) return;
-
-    const codeTrim = businessCode.trim().toUpperCase();
-
-    if (!codeTrim) {
-      setM("Ingresa el código de negocio.");
-      setOk(false);
-      return;
-    }
-    if (!discountCode) {
-      setM("Selecciona un descuento para canjear.");
-      setOk(false);
-      return;
-    }
-
-    // Confirmación si ya se canjeó un momento antes el mismo descuento
-    if (
-      lastRedeem &&
-      lastRedeem.businessCode === codeTrim &&
-      lastRedeem.discountCode === discountCode
-    ) {
-      const again = window.confirm(
-        "Ya registraste un canje para este negocio y este descuento hace un momento.\n\n¿Deseas realizar otro canje?"
-      );
-      if (!again) return;
-    }
 
     setLoading(true);
     setM(null);
+
     try {
       const r = await fetch(`/api/redeem?token=${encodeURIComponent(t)}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ businessCode: codeTrim, discountCode }),
+        body: JSON.stringify({ businessCode: codeTrim, discountCode: discCode }),
       });
-      const j = await r.json();
+
+      const j: RedeemPostResp = await r.json();
       setOk(j.ok);
       setM(j.message);
 
       if (j.ok) {
-        setLastRedeem({ businessCode: codeTrim, discountCode });
+        // Marcamos que ya hubo al menos 1 canje en esta pantalla
+        setHasRedeemedOnce(true);
+
+        /**
+         * (Opcional) Actualización instantánea:
+         * si el backend devuelve remainingAfter, lo aplicamos al descuento seleccionado,
+         * y además refrescamos opciones para traer todo “fresco” desde BD.
+         */
+        if (typeof j.remainingAfter !== "undefined") {
+          setDiscounts((prev) =>
+            prev.map((d) =>
+              d.code === discCode ? { ...d, remaining: j.remainingAfter ?? null } : d
+            )
+          );
+        }
+
+        // "F5 sin refrescar": recargar opciones para que el contador baje (2->1, etc.)
+        // Mantiene la selección actual y NO borra el mensaje de éxito.
+        await loadOptions(t, codeTrim, { keepSelected: true, keepMessage: true });
       }
     } finally {
       setLoading(false);
     }
   }
 
-  const selectedDiscount = discounts.find((d) => d.code === discountCode);
+  /**
+   * Handler del botón "Confirmar canje"
+   * - Primer canje: canjea directo.
+   * - Segundo canje (y siguientes): abre modal bonito de confirmación.
+   */
+  async function go() {
+    if (!t) return;
 
-  // helper para sacar % del label si no viene en el payload
-  const getPercentage = (d: DiscountOption): number | null => {
-    if (typeof d.percentage === "number") return d.percentage;
-    const match = d.label.match(/(\d+)\s*%/);
-    return match ? Number(match[1]) : null;
-  };
+    const codeTrim = normCode(businessCode);
+    const discCode = normCode(discountCode);
+
+    if (!codeTrim) {
+      setM("Ingresa el código de negocio.");
+      setOk(false);
+      return;
+    }
+    if (!discCode) {
+      setM("Selecciona un descuento para canjear.");
+      setOk(false);
+      return;
+    }
+
+    // SOLO desde el 2do canje: pedimos confirmación (modal)
+    if (hasRedeemedOnce) {
+      setPendingRedeem({ businessCode: codeTrim, discountCode: discCode });
+      setConfirmOpen(true);
+      return;
+    }
+
+    // Primer canje: directo
+    await performRedeem(codeTrim, discCode);
+  }
+
+  // Para mostrar en el modal un “después quedará: X”
+  const modalAfterRemaining =
+    typeof selectedDiscount?.remaining === "number"
+      ? Math.max(selectedDiscount.remaining - 1, 0)
+      : null;
 
   return (
     <div className="min-h-screen bg-slate-50 py-6 md:py-10">
@@ -241,17 +332,13 @@ export default function Redeem() {
               </div>
 
               <div className="flex flex-col items-start gap-2 md:items-end">
-                {/* Chip de nivel de membresía (dorado solo para PREMIUM) */}
                 <span
                   className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ${tierTheme.membershipChip}`}
                 >
                   NIVEL DE MEMBRESÍA:{" "}
-                  <span className="ml-1 font-bold">
-                    {inspect.user.tier}
-                  </span>
+                  <span className="ml-1 font-bold">{inspect.user.tier}</span>
                 </span>
 
-                {/* Chip de tarjeta válida */}
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1 text-xs font-medium shadow-sm">
                   <CheckCircle2 className="h-4 w-4" />
                   Tarjeta válida
@@ -278,8 +365,8 @@ export default function Redeem() {
             </h2>
             <p className="mt-1 text-xs text-slate-600 md:text-sm">
               Ingrese el <strong>código del negocio</strong>. Los descuentos
-              disponibles se cargarán automáticamente y podrá seleccionar cuál
-              desea canjear.
+              disponibles se cargarán automáticamente y podrá seleccionar cuál desea
+              canjear.
             </p>
 
             {/* Código de negocio */}
@@ -295,16 +382,12 @@ export default function Redeem() {
                 disabled={!tokenOk}
               />
               {loadingOptions && (
-                <p className="mt-1 text-xs text-slate-500">
-                  Buscando descuentos…
-                </p>
+                <p className="mt-1 text-xs text-slate-500">Buscando descuentos…</p>
               )}
               {!loadingOptions &&
                 businessCode.trim() &&
                 discounts.length === 0 &&
-                m && (
-                  <p className="mt-2 text-xs text-amber-700">{m}</p>
-                )}
+                m && <p className="mt-2 text-xs text-amber-700">{m}</p>}
             </div>
 
             {/* Lista de descuentos en tarjetas */}
@@ -340,7 +423,6 @@ export default function Redeem() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
-                          {/* Chips superiores */}
                           <div className="mb-2 flex flex-wrap items-center gap-2">
                             {pct !== null && (
                               <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
@@ -360,30 +442,22 @@ export default function Redeem() {
                             )}
                           </div>
 
-                          <p className="font-semibold text-slate-900">
-                            {d.label}
-                          </p>
+                          <p className="font-semibold text-slate-900">{d.label}</p>
+
                           {d.description && (
-                            <p className="mt-1 text-xs text-slate-600">
-                              {d.description}
-                            </p>
+                            <p className="mt-1 text-xs text-slate-600">{d.description}</p>
                           )}
 
                           {d.limitPerUser != null && (
                             <p className="mt-2 text-[11px] text-slate-600">
                               Límite por usuario:{" "}
-                              <span className="font-semibold">
-                                {d.limitPerUser}
-                              </span>
+                              <span className="font-semibold">{d.limitPerUser}</span>
                               {typeof d.remaining === "number" && (
                                 <>
                                   {" "}
                                   · Te quedan{" "}
-                                  <span className="font-semibold">
-                                    {d.remaining}
-                                  </span>{" "}
-                                  canje
-                                  {d.remaining === 1 ? "" : "s"}
+                                  <span className="font-semibold">{d.remaining}</span>{" "}
+                                  canje{d.remaining === 1 ? "" : "s"}
                                 </>
                               )}
                             </p>
@@ -413,8 +487,8 @@ export default function Redeem() {
             {/* Acciones inferior */}
             <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <p className="text-[11px] text-slate-500 md:text-xs">
-                Al confirmar el canje, se registrará el uso del descuento y se
-                descontará del límite disponible del usuario.
+                Al confirmar el canje, se registrará el uso del descuento y se descontará
+                del límite disponible del usuario.
               </p>
               <button
                 className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 md:w-auto"
@@ -428,6 +502,96 @@ export default function Redeem() {
           </div>
         </main>
       </div>
+
+      {/* MODAL DE CONFIRMACIÓN (solo desde el 2do canje) */}
+      {confirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* overlay */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => {
+              if (!loading) setConfirmOpen(false);
+            }}
+          />
+
+          {/* card */}
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  Confirmar segundo canje
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Ya realizaste un canje en esta pantalla. Confirma para evitar canjes por
+                  error.
+                </p>
+              </div>
+              <button
+                className="rounded-lg px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                disabled={loading}
+                onClick={() => setConfirmOpen(false)}
+                aria-label="Cerrar"
+                title="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-500">Cliente</span>
+                <span className="font-semibold">{inspect?.user?.name ?? "-"}</span>
+              </div>
+              <div className="mt-2 flex justify-between gap-3">
+                <span className="text-slate-500">Negocio</span>
+                <span className="font-semibold">{normCode(businessCode)}</span>
+              </div>
+              <div className="mt-2 flex justify-between gap-3">
+                <span className="text-slate-500">Descuento</span>
+                <span className="font-semibold">
+                  {selectedDiscount?.label ?? discountCode}
+                </span>
+              </div>
+
+              {typeof selectedDiscount?.remaining === "number" && (
+                <div className="mt-2 flex justify-between gap-3">
+                  <span className="text-slate-500">Después del canje</span>
+                  <span className="font-semibold">
+                    quedará: {modalAfterRemaining} canje(s)
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                disabled={loading}
+                onClick={() => setConfirmOpen(false)}
+              >
+                Cancelar
+              </button>
+
+              <button
+                className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                disabled={loading || !pendingRedeem}
+                onClick={async () => {
+                  if (!pendingRedeem) return;
+                  setConfirmOpen(false);
+                  await performRedeem(pendingRedeem.businessCode, pendingRedeem.discountCode);
+                  setPendingRedeem(null);
+                }}
+              >
+                {loading ? "Registrando…" : "Sí, canjear"}
+              </button>
+            </div>
+
+            <p className="mt-3 text-[11px] text-slate-500">
+              Tip: si vas a canjear otra tarjeta, escanea el otro QR (abre otro link).
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

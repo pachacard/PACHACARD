@@ -1,5 +1,3 @@
-// app/api/redeem/route.ts
-
 import { NextResponse } from "next/server";
 import { verifyQrToken } from "@/lib/token";
 import { prisma } from "@/lib/prisma";
@@ -162,6 +160,9 @@ export async function GET(req: Request) {
  * Nota de consistencia:
  * - El conteo usedByUser está fuera de la transacción (podría haber una carrera si dos canjes simultáneos).
  *   Si necesitas consistencia total, mueve ese count dentro de la misma $transaction.
+ *
+ * NUEVO (mínimo):
+ * - remainingAfter: para que el front actualice el "Te quedan X" sin refrescar página.
  */
 export async function POST(req: Request) {
   const url = new URL(req.url);
@@ -208,8 +209,10 @@ export async function POST(req: Request) {
 
     // 3) Leer input del comercio (cajero)
     const body = await req.json().catch(() => null);
-    const businessCode = String(body?.businessCode || "");
-    const discountCode = String(body?.discountCode || "");
+
+    // Normalizamos para evitar fallos por espacios/minúsculas
+    const businessCode = String(body?.businessCode || "").trim().toUpperCase();
+    const discountCode = String(body?.discountCode || "").trim().toUpperCase();
 
     if (!businessCode || !discountCode) {
       return NextResponse.json(
@@ -272,7 +275,10 @@ export async function POST(req: Request) {
 
     // 7) Límites globales (rápido)
     if (d.limitTotal && d.usedTotal >= d.limitTotal) {
-      return NextResponse.json({ ok: false, message: "Agotado" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, message: "Agotado" },
+        { status: 400 }
+      );
     }
 
     // 7.1) Límite por usuario (nota: para consistencia fuerte, muévelo dentro de la transacción)
@@ -315,10 +321,16 @@ export async function POST(req: Request) {
       });
     });
 
+
+    // Después del canje, el usuario habrá usado (usedByUser + 1)
+    const remainingAfter =
+      d.limitPerUser != null ? Math.max(d.limitPerUser - (usedByUser + 1), 0) : null;
+
     return NextResponse.json({
       ok: true,
       redemptionId: result.id,
       message: "Canje registrado",
+      remainingAfter, // <- NUEVO
     });
   } catch (e) {
     /**
