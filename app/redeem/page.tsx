@@ -16,7 +16,6 @@ type DiscountOption = {
   description?: string | null;
   limitPerUser?: number | null;
   remaining?: number | null;
-  // opcionales extra si en el futuro los devuelves desde /options
   percentage?: number | null;
   category?: string | null;
 };

@@ -7,31 +7,36 @@ function toNull(v: any) {
   const s = (v ?? "").toString().trim();
   return s ? s : null;
 }
+
 function normUrl(u: any) {
   const s = (u ?? "").toString().trim();
   if (!s) return null;
-  if (
-    s.startsWith("http://") ||
-    s.startsWith("https://") ||
-    s.startsWith("data:")
-  )
+  if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("data:")) {
     return s;
+  }
   return null;
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  // Solo ADMIN
+/**
+ * PUT /api/admin/businesses/:id
+ * Actualiza un negocio afiliado.
+ *
+ * Permisos:
+ * - Solo ADMIN
+ *
+ * Diseño:
+ * - Se construye "data" con campos opcionales.
+ * - Luego se eliminan keys con undefined para no sobreescribir campos no enviados.
+ *
+ * Normalizaciones:
+ * - imageUrl se valida para permitir solo http/https/data
+ * - googleMapsUrl se guarda como string o null
+ */
+export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
-  const role =
-    (session as any)?.user?.role ?? (session as any)?.role ?? "USER";
+  const role = (session as any)?.user?.role ?? (session as any)?.role ?? "USER";
   if (role !== "ADMIN") {
-    return NextResponse.json(
-      { ok: false, message: "No autorizado" },
-      { status: 403 }
-    );
+    return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 
   try {
@@ -44,16 +49,12 @@ export async function PUT(
       address: toNull(b.address) ?? "",
       contact: toNull(b.contact) ?? "",
       status: toNull(b.status) ?? "ACTIVE",
-      // clave: aceptar URL remota
       imageUrl: normUrl(b.imageUrl ?? b.logoUrl ?? b.image ?? b.images),
-      // 👇 NUEVO: actualizar también el enlace de Maps
       googleMapsUrl: toNull(b.googleMapsUrl),
     };
 
-    // elimina undefined para no tocar campos que no enviaste
-    Object.keys(data).forEach(
-      (k) => data[k] === undefined && delete data[k]
-    );
+    // Elimina undefined para no tocar campos omitidos por el frontend
+    Object.keys(data).forEach((k) => data[k] === undefined && delete data[k]);
 
     await prisma.business.update({
       where: { id: params.id },
@@ -63,9 +64,6 @@ export async function PUT(
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("PUT /admin/businesses/[id] error:", e);
-    return NextResponse.json(
-      { ok: false, message: "Error interno" },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, message: "Error interno" }, { status: 500 });
   }
 }

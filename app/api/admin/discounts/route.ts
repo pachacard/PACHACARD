@@ -1,8 +1,12 @@
+// app/api/admin/discounts/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import type { Prisma } from "@prisma/client";
 
+/**
+ * Helpers de normalización para inputs de formulario.
+ */
 function toBool(v: any) {
   return v === true || v === "true" || v === 1 || v === "1";
 }
@@ -12,9 +16,30 @@ function toNumOrNull(v: any) {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * POST /api/admin/discounts
+ * Crea un descuento.
+ *
+ * Permisos:
+ * - Solo ADMIN (session.user.role)
+ *
+ * Validaciones:
+ * - code requerido, uppercase
+ * - title requerido
+ * - status válido (DRAFT|PUBLISHED|ARCHIVED)
+ * - exactamente un tier habilitado (regla de negocio)
+ * - startAt/endAt válidos y startAt <= endAt
+ * - businessId, si viene, debe existir
+ *
+ * Post-procesos:
+ * - crea relaciones en DiscountCategory (tabla puente)
+ * - si está vinculado a un negocio, asegura categorías en BusinessCategory
+ *
+ * Errores:
+ * - P2002 => code duplicado (409)
+ */
 export async function POST(req: Request) {
   const session = await auth();
-  // 👇 usar session.user.role
   if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
@@ -33,6 +58,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "Estado inválido." }, { status: 400 });
   }
 
+  // Exclusividad de tier (coherente con UI y con filtros de portal)
   const tb = toBool(b.tierBasic);
   const tn = toBool(b.tierNormal);
   const tp = toBool(b.tierPremium);
@@ -50,20 +76,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, message: "Fechas inválidas." }, { status: 400 });
   }
   if (startAt > endAt) {
-    return NextResponse.json({ ok: false, message: "La fecha de inicio no puede ser mayor que la de fin." }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, message: "La fecha de inicio no puede ser mayor que la de fin." },
+      { status: 400 }
+    );
   }
 
   const images: string | null = (b.images ?? b.imageUrl ?? "").toString().trim() || null;
 
+  // Conexión opcional a Business
   let businessConnect: Prisma.DiscountCreateInput["business"] | undefined;
   let businessId: string | null = null;
+
   if (b.businessId) {
     const biz = await prisma.business.findUnique({
       where: { id: String(b.businessId) },
       select: { id: true },
     });
     if (!biz) {
-      return NextResponse.json({ ok: false, message: "El negocio seleccionado no existe." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, message: "El negocio seleccionado no existe." },
+        { status: 400 }
+      );
     }
     businessId = biz.id;
     businessConnect = { connect: { id: biz.id } };
@@ -91,11 +125,13 @@ export async function POST(req: Request) {
         },
       });
 
+      // Categorías del descuento
       if (categoryIds.length) {
         await tx.discountCategory.createMany({
           data: categoryIds.map((categoryId) => ({ discountId: disc.id, categoryId })),
         });
 
+        // Asegurar categorías del negocio vinculado (si aplica)
         if (businessId) {
           for (const categoryId of categoryIds) {
             await tx.businessCategory.upsert({

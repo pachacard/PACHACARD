@@ -1,7 +1,7 @@
 // app/api/qr/token/[userId]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { makeCardToken } from "@/lib/token"; // ✅ usa el nombre correcto
+import { makeCardToken } from "@/lib/token"; 
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export async function GET(
   if (!user)
     return NextResponse.json({ ok: false, message: "No existe el usuario" }, { status: 404 });
 
-  // ✅ usa makeCardToken
+  //  usa makeCardToken
   const token = await makeCardToken(user.id);
 
   return NextResponse.json({ ok: true, token });

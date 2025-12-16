@@ -1,15 +1,17 @@
-// app/(user)/app/c/[slug]/page.tsx
+// app/(user)/app/category/[slug]/page.tsx
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
-import {
-  getCategoriesWithCounts,
-  getDiscountsByCategorySlug,
-} from "@/lib/db";
+import { getCategoriesWithCounts, getDiscountsByCategorySlug } from "@/lib/db";
 import DiscountCard from "@/components/pachacard/DiscountCard";
 
 type Props = { params: { slug: string } };
 
+/**
+ * Se muestra el detalle de una categoría.
+ * - Se valida que el slug exista dentro de las categorías disponibles.
+ * - Se cargan los descuentos publicados asociados a ese slug.
+ */
 export default async function CategoryDetailPage({ params }: Props) {
   const [cats, discounts] = await Promise.all([
     getCategoriesWithCounts(),
@@ -26,11 +28,12 @@ export default async function CategoryDetailPage({ params }: Props) {
           <span className="mr-2">{current.icon ?? "🏷️"}</span>
           {current.name}
         </h1>
+
         <a
-          href="/app/discounts"
+          href="/app/category"
           className="text-sm text-[var(--brand)] hover:underline"
         >
-          Ver todas las categorías
+          Ver categorías
         </a>
       </div>
 

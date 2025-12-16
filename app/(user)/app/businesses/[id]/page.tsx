@@ -9,14 +9,20 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: { id: string } };
 
-// helpers locales (mismo criterio que en lib/db)
+/**
+ * Se definen helpers locales para aplicar el mismo criterio que en lib/db:
+ * - Filtrado por tier del usuario (BASIC / NORMAL / PREMIUM)
+ * - Filtrado por vigencia (PUBLISHED + startAt/endAt dentro de fecha actual)
+ */
 type Tier = "BASIC" | "NORMAL" | "PREMIUM";
+
 function tierWhere(tier?: Tier) {
   if (!tier) return {};
   if (tier === "BASIC") return { tierBasic: true };
   if (tier === "NORMAL") return { tierNormal: true };
   return { tierPremium: true };
 }
+
 function publishedNowWhere() {
   const now = new Date();
   return {
@@ -26,18 +32,26 @@ function publishedNowWhere() {
   };
 }
 
+/**
+ * Se muestra el detalle de un negocio:
+ * - Se valida sesión (solo usuario logueado)
+ * - Se obtiene el tier real desde BD
+ * - Se obtiene el negocio con sus categorías
+ * - Se listan descuentos de ese negocio filtrados por tier y vigencia
+ * - Se renderiza un “hero” con imagen y datos, y luego el grid de descuentos
+ */
 export default async function BusinessDetailPage({ params }: Props) {
   const session = await auth();
   if (!session?.user) return notFound();
 
-  // tier del usuario
+  // Se obtiene el tier desde BD (no se asume solo por sesión)
   const me = await prisma.user.findUnique({
     where: { id: String(session.user.id) },
     select: { tier: true },
   });
   const tier = (me?.tier as Tier) ?? undefined;
 
-  // negocio + categorías
+  // Se obtiene negocio + categorías (para mostrar tags)
   const business = await prisma.business.findUnique({
     where: { id: params.id },
     include: {
@@ -46,7 +60,7 @@ export default async function BusinessDetailPage({ params }: Props) {
   });
   if (!business) return notFound();
 
-  // descuentos visibles de este negocio según tier
+  // Se obtienen descuentos visibles del negocio (tier + vigencia)
   const discounts = await prisma.discount.findMany({
     where: {
       businessId: business.id,
@@ -60,41 +74,34 @@ export default async function BusinessDetailPage({ params }: Props) {
     orderBy: { startAt: "asc" },
   });
 
+  // Se resuelve la imagen de portada con fallback
   const hero = business.imageUrl || "/brand/business-fallback.png";
   const isExternal = /^https?:\/\//i.test(hero);
 
-  const categoryLabels =
-    business.categories?.map((bc) => bc.category.name) ?? [];
+  // Se obtienen nombres de categorías del negocio para mostrarlos como chips
+  const categoryLabels = business.categories?.map((bc) => bc.category.name) ?? [];
 
   return (
     <div className="container-app py-6 md:py-8 space-y-6">
-      {/* Hero del negocio + info básica */}
+      {/* Se muestra el hero del negocio (imagen + nombre + categorías) */}
       <section className="card overflow-hidden p-0">
         <div className="relative h-52 md:h-64 w-full bg-slate-100">
           {hero ? (
-            isExternal ? (
-              <img
-                src={hero}
-                alt={business.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <img
-                src={hero}
-                alt={business.name}
-                className="h-full w-full object-cover"
-              />
-            )
+            <img
+              src={hero}
+              alt={business.name}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="grid h-full w-full place-content-center text-slate-400">
               Sin imagen
             </div>
           )}
 
-          {/* Degradado para texto */}
+          {/* Se aplica degradado para legibilidad del texto */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
 
-          {/* Nombre + categorías sobre la imagen */}
+          {/* Se muestran categorías y nombre sobre la imagen */}
           <div className="absolute bottom-4 left-4 right-4 space-y-2">
             {categoryLabels.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -108,6 +115,7 @@ export default async function BusinessDetailPage({ params }: Props) {
                 ))}
               </div>
             )}
+
             <h1 className="text-xl md:text-2xl font-semibold text-white drop-shadow">
               {business.name}
             </h1>
@@ -115,13 +123,14 @@ export default async function BusinessDetailPage({ params }: Props) {
         </div>
 
         <div className="card-body space-y-4">
-          {/* Bloque de ubicación */}
+          {/* Se muestra ubicación si existe address o googleMapsUrl */}
           {(business.address || business.googleMapsUrl) && (
             <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 space-y-3">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 rounded-full bg-[var(--brand,#7e1515)]/10 p-2">
                   <MapPin className="h-4 w-4 text-[var(--brand,#7e1515)]" />
                 </div>
+
                 <div className="flex-1">
                   <p className="text-xs font-medium text-slate-500">
                     Ubicación del negocio
@@ -132,6 +141,7 @@ export default async function BusinessDetailPage({ params }: Props) {
                 </div>
               </div>
 
+              {/* Se muestra el enlace a Maps si está configurado */}
               {business.googleMapsUrl && (
                 <a
                   href={business.googleMapsUrl}
@@ -146,7 +156,7 @@ export default async function BusinessDetailPage({ params }: Props) {
             </div>
           )}
 
-          {/* Chips de categorías como resumen textual abajo (opcional) */}
+          {/* Se repiten chips de categorías como resumen debajo */}
           {categoryLabels.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {categoryLabels.map((name) => (
@@ -162,7 +172,7 @@ export default async function BusinessDetailPage({ params }: Props) {
         </div>
       </section>
 
-      {/* Descuentos del negocio */}
+      {/* Se listan descuentos del negocio */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-lg md:text-xl font-semibold">
@@ -188,12 +198,9 @@ export default async function BusinessDetailPage({ params }: Props) {
         )}
       </section>
 
-      {/* Volver */}
+      {/* Se incluye acceso de retorno a la lista de negocios */}
       <div>
-        <a
-          href="/app/businesses"
-          className="text-sm text-slate-600 hover:underline"
-        >
+        <a href="/app/businesses" className="text-sm text-slate-600 hover:underline">
           ← Volver a negocios
         </a>
       </div>

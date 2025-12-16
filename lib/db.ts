@@ -1,10 +1,23 @@
 // lib/db.ts
 import { prisma } from "@/lib/prisma";
 
-/** Tipos opcionales por si quieres filtrar por tier del usuario */
+/**
+ * Tipo de membresía del contribuyente.
+ * Importante: debe coincidir con los valores guardados en BD (User.tier).
+ */
 type Tier = "BASIC" | "NORMAL" | "PREMIUM";
 
-/** Devuelve el filtro de tier para Discount (según tus flags tierBasic/tierNormal/tierPremium) */
+/**
+ * Construye un filtro Prisma para aplicar visibilidad por tier usando flags booleanos
+ * en Discount (tierBasic, tierNormal, tierPremium).
+ *
+ * Idea clave:
+ * - No guardas "tier permitido" como enum dentro de Discount, sino como 3 booleans.
+ * - Por eso el filtro es "tierX = true" según el tier del usuario.
+ *
+ * @param tier Tier del usuario (opcional)
+ * @returns Objeto "where" parcial para Prisma
+ */
 function tierWhere(tier?: Tier) {
   if (!tier) return {};
   if (tier === "BASIC") return { tierBasic: true };
@@ -12,7 +25,19 @@ function tierWhere(tier?: Tier) {
   return { tierPremium: true };
 }
 
-/** Filtro de vigencia + publicado */
+/**
+ * Filtro de "publicado y vigente en este momento".
+ *
+ * Reglas:
+ * - Solo descuentos con status PUBLISHED
+ * - startAt <= now <= endAt
+ *
+ * Nota:
+ * - Se evalúa con "now" del servidor (no del cliente).
+ * - Esto garantiza consistencia al filtrar resultados.
+ *
+ * @returns Objeto "where" parcial para Prisma
+ */
 function publishedNowWhere() {
   const now = new Date();
   return {
@@ -22,7 +47,17 @@ function publishedNowWhere() {
   };
 }
 
-/** Filtro defensivo: evita descuentos con más de un tier encendido simultáneamente */
+/**
+ * Regla defensiva de integridad:
+ * Evita mostrar descuentos que tengan más de un tier habilitado simultáneamente.
+ *
+ * Motivación:
+ * - En tu lógica actual, un descuento debe ser exclusivo de un tier
+ *   (BASIC o NORMAL o PREMIUM).
+ * - Si por error en admin se activan 2 flags a la vez, esto lo bloquea.
+ *
+ * Si más adelante decides permitir descuentos multi-tier, elimina este filtro.
+ */
 const notMixedTier = {
   NOT: [
     { tierBasic: true, tierNormal: true },
@@ -31,11 +66,29 @@ const notMixedTier = {
   ],
 };
 
-/* ----------------------------------------------------------------------------
- * 1) Categorías (ordenadas) con conteo de descuentos VISIBLES para el tier
- *    - Mismo filtro que se usa para obtener los descuentos del usuario.
- *    - El _count.discounts se calcula a partir de los descuentos filtrados.
- * -------------------------------------------------------------------------- */
+/* -----------------------------------------------------------------------------
+ * 1) Categorías con conteo de descuentos visibles para el tier del usuario
+ *
+ * Uso típico:
+ * - Población de "CategoryPills" en el portal del contribuyente:
+ *   nombre de categoría + cantidad de descuentos disponibles (vigentes, publicados y por tier).
+ *
+ * Diseño:
+ * - Se consulta Category e incluye DiscountCategory filtrando por Discount con "discountWhere".
+ * - El conteo se construye en memoria con cat.discounts.length.
+ *
+ * Limitación:
+ * - Esto NO usa un count agregado directo de Prisma; es correcto pero puede ser más pesado
+ *   si la base crece mucho (porque trae IDs de relación).
+ * - Si escala, se puede migrar a query agregada/SQL o a _count con filtros (según versión Prisma).
+ * --------------------------------------------------------------------------- */
+
+/**
+ * Devuelve categorías ordenadas alfabéticamente con conteo de descuentos visibles para un tier.
+ *
+ * @param tier Tier del usuario (opcional). Si no se manda, no filtra por tier.
+ * @returns Arreglo de categorías con un pseudo `_count.discounts` calculado.
+ */
 export async function getCategoriesWithCountsForUser(tier?: Tier) {
   const discountWhere = {
     ...publishedNowWhere(),
@@ -52,13 +105,14 @@ export async function getCategoriesWithCountsForUser(tier?: Tier) {
           discount: discountWhere,
         },
         select: {
-          discountId: true, // solo necesitamos saber cuántos hay
+          // Solo necesitamos contar relaciones, no traer todo el descuento
+          discountId: true,
         },
       },
     },
   });
 
-  // añadimos _count.discounts basado en los descuentos visibles para este tier
+  // Se agrega _count.discounts calculado con las relaciones filtradas
   return categories.map((cat) => ({
     ...cat,
     _count: {
@@ -67,15 +121,31 @@ export async function getCategoriesWithCountsForUser(tier?: Tier) {
   })) as any;
 }
 
-/* ----------------------------------------------------------------------------
- * 2) Descuentos; opcionalmente filtra por slug de categoría y/o tier del usuario
- *    Incluye business con name + imageUrl para el fallback visual.
- *    + Filtro notMixedTier para que no se cuelen registros ambiguos.
- * -------------------------------------------------------------------------- */
-export async function getDiscountsByCategorySlugForUser(
-  slug?: string,
-  tier?: Tier
-) {
+/* -----------------------------------------------------------------------------
+ * 2) Descuentos filtrados por categoría (slug) y por tier del usuario.
+ *
+ * Reglas aplicadas:
+ * - Publicado y vigente (publishedNowWhere)
+ * - Visible para el tier (tierWhere)
+ * - No ambiguo por multi-tier (notMixedTier)
+ *
+ * Incluye:
+ * - business mínimo para mostrar nombre e imagen
+ * - categorías embebidas para UI (pills/tags)
+ *
+ * Paginación:
+ * - take: 24 (limita resultados)
+ * - orderBy createdAt desc (últimos creados primero)
+ * --------------------------------------------------------------------------- */
+
+/**
+ * Obtiene descuentos visibles para un usuario, con filtro opcional de categoría por slug.
+ *
+ * @param slug Slug de categoría (opcional)
+ * @param tier Tier del usuario (opcional)
+ * @returns Descuentos con business y categorías incluidas
+ */
+export async function getDiscountsByCategorySlugForUser(slug?: string, tier?: Tier) {
   return prisma.discount.findMany({
     where: {
       ...publishedNowWhere(),
@@ -87,7 +157,6 @@ export async function getDiscountsByCategorySlugForUser(
     },
     include: {
       business: { select: { id: true, name: true, imageUrl: true } },
-      // Trae Category embebida a través de la tabla puente
       categories: { include: { category: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -95,11 +164,26 @@ export async function getDiscountsByCategorySlugForUser(
   });
 }
 
-/* ----------------------------------------------------------------------------
- * 3) Negocios; opcionalmente filtra por slug de categoría
- *    Punto clave: filtra por categoría del negocio **o** por categorías de sus descuentos.
- *    (El _count de descuentos no filtra por estado/fecha, es total histórico.)
- * -------------------------------------------------------------------------- */
+/* -----------------------------------------------------------------------------
+ * 3) Negocios, con filtro opcional por slug de categoría.
+ *
+ * Regla:
+ * - Si categorySlug existe, el negocio se incluye si:
+ *   (a) el negocio tiene esa categoría asignada directamente, o
+ *   (b) algún descuento del negocio tiene esa categoría.
+ *
+ * Nota importante:
+ * - _count.discounts cuenta todos los descuentos relacionados (histórico),
+ *   no filtra por vigencia o status.
+ *   Si quieres "descuentos vigentes publicados", necesitas un conteo filtrado adicional.
+ * --------------------------------------------------------------------------- */
+
+/**
+ * Devuelve negocios; opcionalmente filtrados por categoría.
+ *
+ * @param opts.categorySlug Slug de categoría para filtrar (opcional)
+ * @returns Lista de negocios con categorías directas y count de descuentos (total histórico)
+ */
 export async function getBusinesses(opts?: { categorySlug?: string }) {
   const byCategory = opts?.categorySlug
     ? {
@@ -121,7 +205,6 @@ export async function getBusinesses(opts?: { categorySlug?: string }) {
   return prisma.business.findMany({
     where: byCategory,
     include: {
-      // categorías directas del negocio
       categories: { include: { category: true } },
       _count: { select: { discounts: true } },
     },
@@ -129,8 +212,9 @@ export async function getBusinesses(opts?: { categorySlug?: string }) {
   });
 }
 
-/* ----------------------------------------------------------------------------
- * ALIASES: para no tocar tus páginas existentes
- * -------------------------------------------------------------------------- */
+/**
+ * Aliases para mantener compatibilidad con páginas antiguas.
+ * Evita romper imports existentes si en el frontend se usa el nombre previo.
+ */
 export const getCategoriesWithCounts = getCategoriesWithCountsForUser;
 export const getDiscountsByCategorySlug = getDiscountsByCategorySlugForUser;

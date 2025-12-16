@@ -1,36 +1,62 @@
-
 // app/api/admin/businesses/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
+/**
+ * Convierte a string trimmed o null.
+ * Útil para inputs de formulario donde el usuario deja el campo vacío.
+ */
 function toNull(v: any) {
   const s = (v ?? "").toString().trim();
   return s ? s : null;
 }
+
+/**
+ * Normaliza una URL para permitir solo:
+ * - http://
+ * - https://
+ * - data:   (caso especial si subes imágenes como data URL)
+ *
+ * Si el valor no cumple, retorna null para no guardar basura/inseguro.
+ *
+ * Nota:
+ * - Permitir data: puede ser pesado (strings enormes). Si ya usas Cloudinary/S3,
+ *   podrías restringirlo solo a http/https.
+ */
 function normUrl(u: any) {
   const s = (u ?? "").toString().trim();
   if (!s) return null;
-  // Permitimos http/https o data: (útil si subes a Cloudinary y recibes base64)
-  if (
-    s.startsWith("http://") ||
-    s.startsWith("https://") ||
-    s.startsWith("data:")
-  )
+
+  if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("data:")) {
     return s;
+  }
   return null;
 }
 
+/**
+ * POST /api/admin/businesses
+ * Crea un negocio afiliado.
+ *
+ * Permisos:
+ * - Solo ADMIN
+ *
+ * Validaciones:
+ * - code y name son requeridos
+ * - imageUrl se normaliza para aceptar solo URLs válidas
+ * - googleMapsUrl se guarda como string o null
+ *
+ * Nota:
+ * - Este endpoint no gestiona categorías del negocio directamente;
+ *   esas categorías se pueden asignar en otras rutas o se aseguran al crear/editar descuentos.
+ */
 export async function POST(req: Request) {
-  // Solo ADMIN
   const session = await auth();
-  const role =
-    (session as any)?.user?.role ?? (session as any)?.role ?? "USER";
+
+  // Compatibilidad defensiva: si por alguna razón el shape cambiara, intenta ambos caminos
+  const role = (session as any)?.user?.role ?? (session as any)?.role ?? "USER";
   if (role !== "ADMIN") {
-    return NextResponse.json(
-      { ok: false, message: "No autorizado" },
-      { status: 403 }
-    );
+    return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 
   try {
@@ -43,9 +69,7 @@ export async function POST(req: Request) {
       address: toNull(b.address) ?? "",
       contact: toNull(b.contact) ?? "",
       status: toNull(b.status) ?? "ACTIVE",
-      // clave: aceptar URL remota
       imageUrl: normUrl(b.imageUrl ?? b.logoUrl ?? b.image ?? b.images),
-      // 👇 NUEVO: guardamos el enlace de Google Maps (string o null)
       googleMapsUrl: toNull(b.googleMapsUrl),
     };
 
@@ -60,9 +84,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, id: created.id });
   } catch (e) {
     console.error("POST /admin/businesses error:", e);
-    return NextResponse.json(
-      { ok: false, message: "Error interno" },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, message: "Error interno" }, { status: 500 });
   }
 }

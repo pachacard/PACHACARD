@@ -1,8 +1,25 @@
+// app/api/admin/users/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 
+/**
+ * POST /api/admin/users
+ * Crea un usuario PACHACARD desde el panel admin.
+ *
+ * Permisos:
+ * - Solo ADMIN
+ *
+ * Campos esperados:
+ * - name, email, password (requeridos)
+ * - tier (default BASIC)
+ * - role (default USER)
+ * - status (default ACTIVE)
+ *
+ * Seguridad:
+ * - password se guarda como hash (bcrypt), nunca como texto.
+ */
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") {
@@ -10,6 +27,7 @@ export async function POST(req: Request) {
   }
 
   const b = await req.json();
+
   const name = String(b.name || "").trim();
   const email = String(b.email || "").toLowerCase().trim();
   const password = String(b.password || "");
@@ -35,6 +53,7 @@ export async function POST(req: Request) {
       },
       select: { id: true },
     });
+
     return NextResponse.json({ ok: true, id: created.id });
   } catch (e: any) {
     if (e?.code === "P2002") {

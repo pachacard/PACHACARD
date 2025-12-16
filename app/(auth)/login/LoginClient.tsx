@@ -5,26 +5,41 @@ import { Suspense, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 
-/* Icons */
+/**
+ * Se definen íconos SVG locales para mostrar/ocultar contraseña.
+ * Se evita dependencia extra, y se controla el estado desde el componente.
+ */
 function Eye(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
-      <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-        d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+      <path
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
+      />
       <circle cx="12" cy="12" r="3" strokeWidth="2" />
     </svg>
   );
 }
+
 function EyeOff(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
-      <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-        d="M3 3l18 18M10.585 10.585a3 3 0 104.243 4.243M9.88 4.77A8.968 8.968 0 0112 4c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-3.143 4.5M6.61 6.61A9.956 9.956 0 004.458 12c1.274 4.057 5.065 7 9.542 7 1.287 0 2.522-.233 3.656-.66" />
+      <path
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 3l18 18M10.585 10.585a3 3 0 104.243 4.243M9.88 4.77A8.968 8.968 0 0112 4c4.477 0 8.268 2.943 9.542 7a9.956 9.956 0 01-3.143 4.5M6.61 6.61A9.956 9.956 0 004.458 12c1.274 4.057 5.065 7 9.542 7 1.287 0 2.522-.233 3.656-.66"
+      />
     </svg>
   );
 }
 
-/* Logos arriba, fuera del panel */
+/**
+ * Se muestra una barra superior con logos (alcalde y municipalidad).
+ * Se usa fallback a PNG si falla la carga de SVG.
+ */
 function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
@@ -36,7 +51,10 @@ function TopBar() {
             className="pointer-events-auto h-10 sm:h-12 w-auto drop-shadow"
             onError={(e) => {
               const t = e.currentTarget as HTMLImageElement;
-              if (!t.dataset.fbk) { t.src = "/brand/alcalde.png"; t.dataset.fbk = "1"; }
+              if (!t.dataset.fbk) {
+                t.src = "/brand/alcalde.png";
+                t.dataset.fbk = "1";
+              }
             }}
           />
           <img
@@ -45,7 +63,10 @@ function TopBar() {
             className="pointer-events-auto h-10 sm:h-12 w-auto drop-shadow"
             onError={(e) => {
               const t = e.currentTarget as HTMLImageElement;
-              if (!t.dataset.fbk) { t.src = "/brand/muni.png"; t.dataset.fbk = "1"; }
+              if (!t.dataset.fbk) {
+                t.src = "/brand/muni.png";
+                t.dataset.fbk = "1";
+              }
             }}
           />
         </div>
@@ -54,7 +75,7 @@ function TopBar() {
   );
 }
 
-/* Fondo con arte PAC y degradados */
+/** Se renderiza el fondo institucional con degradados y arte PAC. */
 function BrandBackground() {
   return (
     <div aria-hidden className="absolute inset-0 -z-10">
@@ -66,7 +87,12 @@ function BrandBackground() {
   );
 }
 
-/* Sub-componente que usa useSearchParams — envuelto en Suspense */
+/**
+ * Se encapsula el formulario que usa useSearchParams dentro de Suspense.
+ * - Se lee el parámetro "error" de NextAuth y se muestra mensaje.
+ * - Se maneja estado de inputs y submit.
+ * - Se hace signIn("credentials") con callbackUrl.
+ */
 function LoginInner({ callbackUrl }: { callbackUrl: string }) {
   const search = useSearchParams();
   const errParam = search?.get("error");
@@ -80,6 +106,7 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [ready, setReady] = useState(false);
 
+  // Se activa un “fade in” corto para animación de entrada
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 10);
     return () => clearTimeout(t);
@@ -89,6 +116,7 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
     e.preventDefault();
     setSubmitting(true);
     try {
+      // Se solicita CSRF para evitar ciertos errores intermitentes en auth
       await fetch("/api/auth/csrf", { cache: "no-store" }).catch(() => {});
       await signIn("credentials", {
         email,
@@ -126,12 +154,11 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
 
             {shouldShowError && (
               <div className="mb-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                No pudimos iniciar sesión. Verifica tus datos e inténtalo otra vez.
+                No se pudo iniciar sesión. Se verifica datos y se intenta otra vez.
               </div>
             )}
 
             <form onSubmit={onSubmit} className="space-y-4">
-              {/* Email */}
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-700">Email</label>
                 <input
@@ -151,7 +178,6 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
                 />
               </div>
 
-              {/* Password */}
               <div className="space-y-1">
                 <label className="text-sm font-medium text-slate-700">Password</label>
                 <div className="relative">
@@ -169,6 +195,8 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
                       transition
                     "
                   />
+
+                  {/* Se alterna visibilidad del password sin afectar el submit */}
                   <button
                     type="button"
                     onClick={() => setShow((v) => !v)}
@@ -207,11 +235,10 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
             <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-700">
               <div className="font-medium text-slate-800 mb-1.5">¿Necesitas ayuda?</div>
               <ul className="list-disc pl-5 space-y-1">
-                <li>La contraseña la entrega la Municipalidad con tu <b>PACHACARD</b>.</li>
-                <li>Si la olvidaste, solicita el cambio al soporte.</li>
+                <li>La contraseña es entregada por la Municipalidad con la PACHACARD.</li>
+                <li>Si se olvida, se solicita el cambio al soporte.</li>
               </ul>
             </div>
-
           </div>
         </div>
       </div>
@@ -219,13 +246,24 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
   );
 }
 
+/**
+ * Se renderiza la pantalla completa de login con fondo institucional:
+ * - Se monta el background + topbar
+ * - Se carga el formulario dentro de Suspense (por useSearchParams)
+ */
 export default function LoginClient({ callbackUrl = "/app" }: { callbackUrl?: string }) {
   return (
     <div className="fixed inset-0 overflow-auto">
       <div className="relative min-h-full">
         <BrandBackground />
         <TopBar />
-        <Suspense fallback={<div className="grid place-items-center min-h-[60vh] text-white/80">Cargando…</div>}>
+        <Suspense
+          fallback={
+            <div className="grid place-items-center min-h-[60vh] text-white/80">
+              Cargando…
+            </div>
+          }
+        >
           <LoginInner callbackUrl={callbackUrl} />
         </Suspense>
       </div>

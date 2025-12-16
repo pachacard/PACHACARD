@@ -15,7 +15,7 @@ async function seedUsers() {
     const passwordHash = await bcrypt.hash(u.pass, 10);
     await prisma.user.upsert({
       where: { email: u.email.toLowerCase() },
-      // 👉 NO resetea contraseñas al reseed (comenta la línea si SÍ quieres que se reseteen):
+      
       update: {
         name: u.name,
         // passwordHash, // <- descomenta si quieres forzar password en cada seed
@@ -33,7 +33,7 @@ async function seedUsers() {
       },
     });
   }
-  console.log("✅ Usuarios listos");
+  console.log(" Usuarios listos");
 }
 
 /* 2) Categorías (upsert) */
@@ -58,7 +58,7 @@ async function seedCategories() {
     });
   }
 
-  console.log("Seed de categorías listo ✅");
+  console.log("Seed de categorías listo ");
 }
 
 
@@ -73,7 +73,7 @@ async function attach(code: string, slug: string) {
     select: { id: true },
   });
   if (!disc || !cat) {
-    console.log(`⚠️ Saltando vínculo: no existe ${!disc ? "descuento" : "categoría"} (${code} -> ${slug})`);
+    console.log(`Saltando vínculo: no existe ${!disc ? "descuento" : "categoría"} (${code} -> ${slug})`);
     return;
   }
   await prisma.discountCategory.upsert({
@@ -89,7 +89,7 @@ async function seedLinks() {
   await attach("RESTO10", "gastronomia");
   await attach("CAFE15",  "gastronomia");
   await attach("GYM20",   "bienestar-y-salud");
-  console.log("✅ Vínculos descuento↔categoría listos");
+  console.log(" Vínculos descuento↔categoría listos");
 }
 
 async function main() {

@@ -1,35 +1,38 @@
+/* app/globals.css */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* =========================
-   Design tokens base (fusion Figma + PACHACARD)
-   ========================= */
-
-/* Paleta principal e institucional */
+/*
+  Se definen tokens de diseño (variables CSS) para mantener consistencia visual.
+  Se centralizan colores institucionales PACHACARD, fondos, tipografías, bordes y radios.
+*/
 :root {
-  /* Tamaño base */
+  /* Se fija tamaño base para tipografía */
   --font-size: 15px;
 
-  /* PACHACARD brand */
-  --brand:      #8f1b1b; /* rojo institucional */
-  --brand-700:  #6f1414; /* hover/activo     */
-  --brand-50:   #fdecee; /* fondo sutil      */
+  /* Se define la paleta institucional PACHACARD */
+  --brand: #8f1b1b;     /* rojo institucional */
+  --brand-700: #6f1414; /* estado hover/activo */
+  --brand-50: #fdecee;  /* fondo suave */
 
-  /* Figma-style tokens adaptados */
-  --background: #f7f7f8;     /* fondo app */
-  --foreground: #0f172a;     /* texto principal */
+  /* Se definen tokens “tipo Figma” para fondos y texto */
+  --background: #f7f7f8;
+  --foreground: #0f172a;
 
+  /* Se definen colores base para superficies */
   --card: #ffffff;
   --card-foreground: #0f172a;
 
   --popover: #ffffff;
   --popover-foreground: #0f172a;
 
-  /* Usamos rojo muni como primary */
+  /* Se asigna el rojo institucional como color primary */
   --primary: var(--brand);
   --primary-foreground: #ffffff;
 
+  /* Se definen colores secundarios y estados */
   --secondary: #f3f3f5;
   --secondary-foreground: #030213;
 
@@ -42,14 +45,14 @@
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
 
+  /* Se normaliza borde, input y ring */
   --border: rgba(0, 0, 0, 0.08);
   --input: transparent;
   --input-background: #f3f3f5;
   --switch-background: #cbced4;
+  --ring: #8f1b1b33; /* ring con transparencia usando rojo institucional */
 
-  --ring: #8f1b1b33; /* aro suave en rojo muni */
-
-  /* Radios (un poco más redondeado que Figma) */
+  /* Se definen radios para un estilo redondeado consistente */
   --radius: 0.75rem;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -57,7 +60,10 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Tema oscuro opcional por si luego usas class="dark" */
+/*
+  Se define tema oscuro opcional (si se aplica class="dark" en el root).
+  Se reemplazan tokens sin tocar componentes individuales.
+*/
 .dark {
   --background: #0f172a;
   --foreground: #f9fafb;
@@ -89,28 +95,33 @@
   --ring: #4b5563;
 }
 
-/* =========================
-   Base tipográfica moderna
-   ========================= */
+/*
+  Se configura base tipográfica:
+  - Se usa Inter si está disponible vía --font-inter
+  - Se define tamaño, line-height y ajuste móvil
+*/
 html {
   font-family: var(--font-inter), system-ui, -apple-system, Segoe UI, Roboto,
     "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", sans-serif;
-  font-size: var(--font-size); /* 15px */
+  font-size: var(--font-size);
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
 }
 
 @layer base {
+  /* Se unifica color de borde para todos los elementos */
   * {
     border-color: var(--border);
   }
 
+  /* Se aplica fondo y color global a todo el body */
   body {
     background-color: var(--background);
     color: var(--foreground);
   }
 
+  /* Se estandariza peso y tracking para títulos */
   h1,
   h2,
   h3,
@@ -120,8 +131,10 @@ html {
     letter-spacing: -0.015em;
   }
 
-  /* Tipografía “por defecto” estilo Figma:
-     solo aplica donde no has puesto clases text-* explícitas */
+  /*
+    Se aplica “tipografía por defecto” solo cuando NO se han definido clases text-*.
+    Se evita sobre-escribir estilos cuando ya hay Tailwind en el componente.
+  */
   :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
     h1 {
       @apply text-2xl;
@@ -161,34 +174,48 @@ html {
 /* =========================
    Helpers de layout
    ========================= */
+
+/* Se define contenedor estándar para todas las vistas */
 .container-app {
   @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
 }
 
+/* Se define estilo base de tarjeta reutilizable */
 .card {
   @apply rounded-xl border bg-white p-4 shadow-sm;
 }
 
+/* Se define un body de tarjeta con espaciado consistente */
 .card-body {
   @apply space-y-4;
 }
 
-/* Pills / Badges */
+/* =========================
+   Pills / Badges
+   ========================= */
+
+/* Se define badge genérico */
 .badge {
   @apply rounded px-2 py-0.5 text-[10px];
 }
 
+/* Se define variante verde para estados OK */
 .badge-green {
   @apply bg-emerald-50 text-emerald-700;
 }
 
-/* Topbar sticky */
+/* =========================
+   Topbar sticky
+   ========================= */
+
+/* Se define barra superior fija con color institucional */
 .topbar {
   background: var(--brand);
   color: white;
   @apply sticky top-0 z-40;
 }
 
+/* Se define estilo de enlaces en topbar */
 .topbar a {
   @apply text-white/90 hover:text-white;
 }
@@ -196,11 +223,14 @@ html {
 /* =========================
    Botones
    ========================= */
+
+/* Se define base de botón reutilizable */
 .btn {
   @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium
          shadow-sm border transition;
 }
 
+/* Se define botón principal con rojo institucional */
 .btn-primary {
   background: var(--brand);
   color: #fff;
@@ -210,14 +240,17 @@ html {
   background: var(--brand-700);
 }
 
+/* Se define botón secundario blanco */
 .btn-secondary {
   @apply border-slate-300 bg-white text-slate-800 hover:bg-slate-50;
 }
 
+/* Se define botón outline transparente */
 .btn-outline {
   @apply border-slate-300 bg-transparent text-slate-800 hover:bg-slate-50;
 }
 
+/* Se define botón peligro para acciones destructivas */
 .btn-danger {
   @apply border-transparent bg-red-600 text-white hover:bg-red-700;
 }
@@ -225,10 +258,13 @@ html {
 /* =========================
    Formularios coherentes
    ========================= */
+
+/* Se define estilo estándar de label */
 .label {
   @apply mb-1 block text-sm font-medium text-slate-700;
 }
 
+/* Se define input estándar y textarea */
 .input,
 textarea.input {
   @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
@@ -236,17 +272,19 @@ textarea.input {
          focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500;
 }
 
+/* Se define select estándar */
 .select {
   @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
          shadow-sm
          focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500;
 }
 
-
+/* Se define texto de ayuda bajo campos */
 .help {
   @apply mt-1 text-xs text-slate-500;
 }
 
+/* Se define grid estándar para formularios (2 columnas en md) */
 .form-grid {
   @apply grid gap-5 md:grid-cols-2;
 }
@@ -254,6 +292,8 @@ textarea.input {
 /* =========================
    Animación sutil
    ========================= */
+
+/* Se define animación de entrada para componentes */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -264,11 +304,17 @@ textarea.input {
     transform: translateY(0);
   }
 }
+
+/* Se expone clase utility para aplicar fadeInUp */
 .animate-fadeInUp {
   animation: fadeInUp 0.35s ease-out both;
 }
 
-/* Ocultar scrollbar horizontal (pills) */
+/* =========================
+   Scroll helpers
+   ========================= */
+
+/* Se oculta scrollbar (útil para pills horizontales) */
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

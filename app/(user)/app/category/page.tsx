@@ -1,8 +1,13 @@
+// app/(user)/app/category/page.tsx
 import { getCategoriesWithCounts } from "@/lib/db";
 import { CategoryCard } from "@/components/pachacard";
 
 export const metadata = { title: "Categorías | PACHACARD" };
 
+/**
+ * Se muestran todas las categorías en un grid.
+ * Desde cada tarjeta se navega al detalle: /app/category/[slug]
+ */
 export default async function CategoriesPage() {
   const categories = await getCategoriesWithCounts();
 

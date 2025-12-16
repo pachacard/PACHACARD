@@ -1,30 +1,47 @@
+// app/api/admin/users/[id]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 
+/**
+ * Endpoint admin para gestionar un usuario específico.
+ *
+ * PUT:
+ * - Actualiza datos básicos (name, email, tier, role, status)
+ * - Opcional: cambia contraseña (password -> passwordHash)
+ * - Opcional: rota tokenVersion (invalida QRs anteriores si ENFORCE_TV está activo en canje)
+ *
+ * DELETE:
+ * - Elimina un usuario.
+ *   Nota: en vez de borrar, a veces conviene solo poner status=INACTIVE
+ *   para no perder auditoría/historial.
+ */
+
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
-   if (!session?.user || session.user.role !== "ADMIN") {
+  if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ ok: false }, { status: 403 });
   }
 
   const b = await req.json();
 
-  // actualizar datos básicos
+  // Solo agregamos al update lo que realmente llegó
   const data: any = {};
+
   if (typeof b.name === "string") data.name = b.name.trim();
   if (typeof b.email === "string") data.email = b.email.toLowerCase().trim();
   if (typeof b.tier === "string") data.tier = b.tier;
   if (typeof b.role === "string") data.role = b.role;
   if (typeof b.status === "string") data.status = b.status;
 
-  // cambiar password (opcional)
+  // Cambio de contraseña (opcional)
+  // Guardamos solo hash, nunca password plano
   if (typeof b.password === "string" && b.password) {
     data.passwordHash = await bcrypt.hash(b.password, 10);
   }
 
-  // rotar tokenVersion (invalidar QRs previos si lo chequeas en canje)
+  // Rotar tokenVersion: invalida QRs previos si tu canje lo valida (ENFORCE_TV)
   if (b.rotateToken) {
     data.tokenVersion = { increment: 1 };
   }
@@ -36,6 +53,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
+    // P2002 suele ser unique constraint (ej: email duplicado)
     if (e?.code === "P2002") {
       return NextResponse.json({ ok: false, error: "Email duplicado" }, { status: 409 });
     }
@@ -45,10 +63,15 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
-  if (!session?.user ||session.user.role !== "ADMIN"){
+  if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ ok: false }, { status: 403 });
   }
 
-  await prisma.user.delete({ where: { id: params.id } });
-  return NextResponse.json({ ok: true });
+  try {
+    await prisma.user.delete({ where: { id: params.id } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ ok: false, error: "Error" }, { status: 500 });
+  }
 }
