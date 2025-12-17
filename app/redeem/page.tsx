@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 
 type InspectResp = {
@@ -23,7 +23,7 @@ type RedeemPostResp = {
   ok: boolean;
   message: string;
   redemptionId?: string;
-  remainingAfter?: number | null; // <- NUEVO (si el backend lo retorna)
+  remainingAfter?: number | null; 
 };
 
 function getTierTheme(tier?: string) {
@@ -67,15 +67,11 @@ export default function Redeem() {
   const [loading, setLoading] = useState(false);
 
   /**
-   * NUEVO:
    * Para que la confirmación salga SOLO a partir del 2do canje en esta pantalla.
-   * - Primer canje: NO pregunta (flujo rápido).
-   * - Segundo canje y siguientes: pide confirmación en modal bonito.
    */
   const [hasRedeemedOnce, setHasRedeemedOnce] = useState(false);
 
   /**
-   * NUEVO:
    * Modal de confirmación (en vez de window.confirm)
    */
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -84,11 +80,18 @@ export default function Redeem() {
     discountCode: string;
   } | null>(null);
 
+  /**
+   * ANTI "NEGOCIO INVÁLIDO" FANTASMA:
+   * - AbortController cancela requests viejos
+   * - seq hace que solo el último request pueda cambiar estado
+   */
+  const optionsAbortRef = useRef<AbortController | null>(null);
+  const optionsSeqRef = useRef(0);
+
   useEffect(() => {
     const token = new URL(location.href).searchParams.get("token");
     setT(token);
 
-    // Verifica a quién pertenece el token
     (async () => {
       if (!token) {
         setInspect({
@@ -100,6 +103,7 @@ export default function Redeem() {
       try {
         const r = await fetch(`/api/redeem?token=${encodeURIComponent(token)}`, {
           method: "GET",
+          cache: "no-store",
         });
         const j: InspectResp = await r.json();
         setInspect(j);
@@ -128,14 +132,19 @@ export default function Redeem() {
   );
 
   /**
-   * Carga automática de descuentos cuando cambia el código de negocio
+   * Carga automática cuando cambia el código de negocio
    */
   useEffect(() => {
     if (!t || !tokenOk) return;
 
     const codeTrim = normCode(businessCode);
 
+    // Si se borró el input: limpiamos todo y cancelamos requests viejos
     if (!codeTrim) {
+      optionsSeqRef.current += 1;
+      optionsAbortRef.current?.abort();
+      optionsAbortRef.current = null;
+
       setDiscounts([]);
       setD("");
       setM(null);
@@ -144,8 +153,9 @@ export default function Redeem() {
     }
 
     const handle = setTimeout(() => {
-      void loadOptions(t, codeTrim, { keepSelected: false, keepMessage: true });
-    }, 500);
+      // ✅ IMPORTANTE: mientras tipeas NO conserves mensajes viejos
+      void loadOptions(t, codeTrim, { keepSelected: false, keepMessage: false });
+    }, 450);
 
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,7 +164,7 @@ export default function Redeem() {
   /**
    * loadOptions (mejorado):
    * - Permite "refrescar" descuentos sin resetear selección ni borrar mensajes.
-   * - Lo usamos después de canjear para simular "F5" sin recargar página.
+   * - Evita race conditions (abort + seq)
    */
   async function loadOptions(
     token: string,
@@ -166,9 +176,19 @@ export default function Redeem() {
 
     const prevSelected = keepSelected ? discountCode : "";
 
+    // seq: solo el último request manda
+    const seq = ++optionsSeqRef.current;
+
+    // cancelar request anterior
+    if (optionsAbortRef.current) {
+      optionsAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    optionsAbortRef.current = controller;
+
     setLoadingOptions(true);
 
-    // Si NO queremos mantener mensajes, limpiamos aquí
+    // Si NO queremos mantener mensajes (caso tipeo), limpiamos
     if (!keepMessage) {
       setM(null);
       setOk(null);
@@ -179,8 +199,15 @@ export default function Redeem() {
         token
       )}&businessCode=${encodeURIComponent(code)}`;
 
-      const r = await fetch(url);
+      const r = await fetch(url, {
+        signal: controller.signal,
+        cache: "no-store",
+      });
+
       const j = await r.json();
+
+      // si ya hay request más nuevo, ignora este
+      if (seq !== optionsSeqRef.current) return;
 
       if (!j.ok) {
         setM(j.message || "No se pudieron cargar los descuentos.");
@@ -201,23 +228,36 @@ export default function Redeem() {
         setD("");
       }
 
-      if (incoming.length === 0) {
+      // ✅ Si llegaron descuentos, NO debe quedarse un error viejo tipo “Negocio inválido”
+      // (pero si keepMessage=true y ok=true por un canje exitoso, lo conservamos)
+      if (incoming.length > 0) {
+        if (!keepMessage || ok === false) {
+          setM(null);
+          setOk(null);
+        }
+      } else {
         setM("No hay descuentos disponibles para este negocio.");
         setOk(false);
       }
-    } catch {
+    } catch (err: any) {
+      // abort = normal cuando tipeas rápido, no mostramos error
+      if (controller.signal.aborted) return;
+
+      if (seq !== optionsSeqRef.current) return;
+
       setM("Error al cargar los descuentos.");
       setOk(false);
       setDiscounts([]);
       if (!keepSelected) setD("");
     } finally {
-      setLoadingOptions(false);
+      if (seq === optionsSeqRef.current) {
+        setLoadingOptions(false);
+      }
     }
   }
 
   /**
-   * Realiza el POST real del canje.
-   * - Si ok: hace "soft refresh" de los descuentos (F5 sin recargar página).
+   * POST real del canje + "F5 sin refrescar"
    */
   async function performRedeem(codeTrim: string, discCode: string) {
     if (!t) return;
@@ -230,6 +270,7 @@ export default function Redeem() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ businessCode: codeTrim, discountCode: discCode }),
+        cache: "no-store",
       });
 
       const j: RedeemPostResp = await r.json();
@@ -237,14 +278,9 @@ export default function Redeem() {
       setM(j.message);
 
       if (j.ok) {
-        // Marcamos que ya hubo al menos 1 canje en esta pantalla
         setHasRedeemedOnce(true);
 
-        /**
-         * (Opcional) Actualización instantánea:
-         * si el backend devuelve remainingAfter, lo aplicamos al descuento seleccionado,
-         * y además refrescamos opciones para traer todo “fresco” desde BD.
-         */
+        // Si el backend devuelve remainingAfter, actualizamos instantáneo
         if (typeof j.remainingAfter !== "undefined") {
           setDiscounts((prev) =>
             prev.map((d) =>
@@ -253,8 +289,8 @@ export default function Redeem() {
           );
         }
 
-        // "F5 sin refrescar": recargar opciones para que el contador baje (2->1, etc.)
-        // Mantiene la selección actual y NO borra el mensaje de éxito.
+        // Soft refresh: refresca opciones SIN recargar página
+        // Mantiene selección y mantiene el mensaje de éxito.
         await loadOptions(t, codeTrim, { keepSelected: true, keepMessage: true });
       }
     } finally {
@@ -263,9 +299,9 @@ export default function Redeem() {
   }
 
   /**
-   * Handler del botón "Confirmar canje"
-   * - Primer canje: canjea directo.
-   * - Segundo canje (y siguientes): abre modal bonito de confirmación.
+   * Handler del botón
+   * - 1er canje: directo
+   * - 2do+ canje: modal bonito
    */
   async function go() {
     if (!t) return;
@@ -284,18 +320,15 @@ export default function Redeem() {
       return;
     }
 
-    // SOLO desde el 2do canje: pedimos confirmación (modal)
     if (hasRedeemedOnce) {
       setPendingRedeem({ businessCode: codeTrim, discountCode: discCode });
       setConfirmOpen(true);
       return;
     }
 
-    // Primer canje: directo
     await performRedeem(codeTrim, discCode);
   }
 
-  // Para mostrar en el modal un “después quedará: X”
   const modalAfterRemaining =
     typeof selectedDiscount?.remaining === "number"
       ? Math.max(selectedDiscount.remaining - 1, 0)
@@ -304,7 +337,7 @@ export default function Redeem() {
   return (
     <div className="min-h-screen bg-slate-50 py-6 md:py-10">
       <div className="mx-auto w-full max-w-4xl px-4">
-        {/* HEADER DEL USUARIO (dinámico por tier) */}
+        {/* HEADER */}
         <header
           className={`rounded-2xl p-4 md:p-6 shadow-md text-white ${
             tokenOk ? tierTheme.headerBg : "bg-rose-600"
@@ -325,9 +358,7 @@ export default function Redeem() {
                   <p className="text-base md:text-lg font-semibold leading-tight">
                     {inspect.user.name}
                   </p>
-                  <p className="text-xs md:text-sm opacity-90">
-                    {inspect.user.email}
-                  </p>
+                  <p className="text-xs md:text-sm opacity-90">{inspect.user.email}</p>
                 </div>
               </div>
 
@@ -357,19 +388,18 @@ export default function Redeem() {
           )}
         </header>
 
-        {/* BLOQUE PRINCIPAL DE CANJE */}
+        {/* MAIN */}
         <main className="mt-6 space-y-4">
           <div className="rounded-2xl bg-white p-4 shadow-sm md:p-6">
             <h2 className="text-base font-semibold text-slate-900 md:text-lg">
               Seleccionar descuento a aplicar
             </h2>
             <p className="mt-1 text-xs text-slate-600 md:text-sm">
-              Ingrese el <strong>código del negocio</strong>. Los descuentos
-              disponibles se cargarán automáticamente y podrá seleccionar cuál desea
-              canjear.
+              Ingrese el <strong>código del negocio</strong>. Los descuentos disponibles
+              se cargarán automáticamente y podrá seleccionar cuál desea canjear.
             </p>
 
-            {/* Código de negocio */}
+            {/* Código negocio */}
             <div className="mt-4">
               <label className="mb-1 block text-xs font-medium text-slate-700">
                 Código de negocio
@@ -381,23 +411,24 @@ export default function Redeem() {
                 onChange={(e) => setB(e.target.value.toUpperCase())}
                 disabled={!tokenOk}
               />
+
               {loadingOptions && (
                 <p className="mt-1 text-xs text-slate-500">Buscando descuentos…</p>
               )}
+
               {!loadingOptions &&
                 businessCode.trim() &&
                 discounts.length === 0 &&
                 m && <p className="mt-2 text-xs text-amber-700">{m}</p>}
             </div>
 
-            {/* Lista de descuentos en tarjetas */}
+            {/* Cards */}
             {discounts.length > 0 && (
               <div className="mt-6 space-y-3">
                 <div className="flex items-center justify-between text-xs text-slate-500 md:text-sm">
                   <span>
-                    {discounts.length} descuento
-                    {discounts.length !== 1 ? "s" : ""} disponible
-                    {discounts.length !== 1 ? "s" : ""} para este negocio
+                    {discounts.length} descuento{discounts.length !== 1 ? "s" : ""}{" "}
+                    disponible{discounts.length !== 1 ? "s" : ""} para este negocio
                   </span>
                   {businessCode.trim() && (
                     <span className="font-mono text-[11px] uppercase">
@@ -470,7 +501,7 @@ export default function Redeem() {
               </div>
             )}
 
-            {/* Mensaje de éxito/error general */}
+            {/* Mensaje general */}
             {m && (!discounts.length || ok !== null) && (
               <div
                 className={`mt-4 rounded-lg border px-3 py-2 text-xs md:text-sm ${
@@ -484,7 +515,7 @@ export default function Redeem() {
               </div>
             )}
 
-            {/* Acciones inferior */}
+            {/* Acciones */}
             <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <p className="text-[11px] text-slate-500 md:text-xs">
                 Al confirmar el canje, se registrará el uso del descuento y se descontará
@@ -503,10 +534,9 @@ export default function Redeem() {
         </main>
       </div>
 
-      {/* MODAL DE CONFIRMACIÓN (solo desde el 2do canje) */}
+      {/* MODAL (solo 2do canje) */}
       {confirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          {/* overlay */}
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => {
@@ -514,7 +544,6 @@ export default function Redeem() {
             }}
           />
 
-          {/* card */}
           <div className="relative w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
