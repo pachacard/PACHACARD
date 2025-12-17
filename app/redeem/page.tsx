@@ -81,7 +81,7 @@ export default function Redeem() {
   } | null>(null);
 
   /**
-   * ANTI "NEGOCIO INVÁLIDO" FANTASMA:
+   * "NEGOCIO INVÁLIDO" FANTASMA:
    * - AbortController cancela requests viejos
    * - seq hace que solo el último request pueda cambiar estado
    */
