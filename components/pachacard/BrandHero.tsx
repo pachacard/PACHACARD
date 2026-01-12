@@ -23,7 +23,7 @@ export default function BrandHero() {
       />
       <img
         src="/brand/muni.svg"
-        alt="Municipalidad de Pachacámac"
+        alt="Municipalidad Distrital de Pachacámac"
         className="select-none absolute right-6 top-6 h-14 w-auto opacity-95"
       />
 

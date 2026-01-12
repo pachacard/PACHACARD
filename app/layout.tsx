@@ -5,7 +5,7 @@ import type { Metadata, Viewport } from "next";
 import PachaHeader from "@/components/pachacard/PachaHeader";
 
 export const metadata: Metadata = {
-  title: "PACHACARD · Municipalidad de Pachacámac",
+  title: "PACHACARD · Municipalidad Distrital de Pachacámac",
   description: "Programa de descuentos y beneficios para contribuyentes.",
   icons: {
     icon: "/icons/pachacard-192.png",   // icono general
@@ -49,7 +49,7 @@ export default function RootLayout({
         <PachaHeader />
         <main className="container-app py-6">{children}</main>
         <footer className="container-app py-8 text-xs text-slate-500">
-          © {new Date().getFullYear()} Municipalidad de Pachacámac · PACHACARD
+          © {new Date().getFullYear()} Municipalidad Distrital de Pachacámac · PACHACARD
         </footer>
       </body>
     </html>

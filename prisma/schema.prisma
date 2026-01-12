@@ -1,15 +1,15 @@
 // prisma/schema.prisma
 
 generator client {
-  // Se genera el cliente de Prisma para poder consultar la BD desde el backend.
   provider = "prisma-client-js"
 }
 
 datasource db {
-  // Se define PostgreSQL como motor y se lee la cadena de conexión desde .env.
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")  // Pooler (recomendado en serverless)
+  directUrl = env("DIRECT_URL")    // Direct (recomendado para migraciones/restore)
 }
+
 
 // MODELO: User
 // Se registra a los titulares que ingresan al portal (ciudadanos) y también a administradores.

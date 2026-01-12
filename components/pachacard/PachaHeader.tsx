@@ -84,7 +84,7 @@ export default function PachaHeader() {
           />
           <div className="leading-none text-white">
             <div className="font-semibold tracking-wide">PACHACARD</div>
-            <div className="text-[11px] opacity-80">Municipalidad de Pachacámac</div>
+            <div className="text-[11px] opacity-80">Municipalidad Distrital de Pachacámac</div>
           </div>
         </a>
 
