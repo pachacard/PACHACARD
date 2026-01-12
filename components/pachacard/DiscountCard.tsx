@@ -163,7 +163,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             </div>
           </div>
 
-          {/* Badge de estado arriba der */}
+          {/* Badge dse estado arriba der */}
           <div className="absolute right-4 top-4">
             <span
               className={`rounded-full px-3 py-0.5 text-[11px] font-medium shadow-sm ${status.cls}`}
