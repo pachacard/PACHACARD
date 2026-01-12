@@ -275,7 +275,7 @@ export default async function DiscountDetail({
 
             {limitPerUser != null && (
               <p className="mt-1 text-[11px] text-violet-700/80">
-                {mine > 0 ? `Ya usé ${mine} / ${limitPerUser}` : "Aún no usé este beneficio."}
+                {mine > 0 ? `Ya usé ${mine} de ${limitPerUser}` : "Aún no usé este beneficio."}
               </p>
             )}
           </div>

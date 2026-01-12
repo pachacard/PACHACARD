@@ -10,7 +10,7 @@ type Discount = {
   title?: string;
   description?: string;
   images?: string[] | string | null;
-  code?: string; // sigue existiendo, pero no se muestra
+  code?: string;
   startAt?: string | Date | null;
   endAt?: string | Date | null;
   limitTotal?: number | null;
@@ -45,13 +45,13 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
   );
   const isUpcoming = !!(d?.status === "pronto" || (startAt && startAt > now));
 
-  // Límite por usuario agotado
   const limitPerUser = d?.limitPerUser ?? null;
   const usedByUser = d?.usedByUser ?? 0;
   const userLimitUsed =
     limitPerUser != null && usedByUser >= limitPerUser ? true : false;
+  const remainingUserUses =
+    limitPerUser != null ? Math.max(0, limitPerUser - usedByUser) : null;
 
-  // Estado unificado
   const status = useMemo(() => {
     if (soldOut)
       return {
@@ -74,7 +74,6 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
     };
   }, [soldOut, userLimitUsed, isUpcoming]);
 
-  // Imagen principal
   const hero =
     (Array.isArray(d?.images) ? d.images[0] : d?.images) ||
     d?.business?.imageUrl ||
@@ -82,18 +81,15 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
   const isExternal = /^https?:\/\//i.test(String(hero));
 
   const isGreyed = soldOut || userLimitUsed;
-
-  // Datos de negocio
   const businessName = d?.business?.name ?? "";
 
-  // Vigencia (solo fin para mostrar en la card) → dd-mm-aaaa
+  // Formato dd-mm-aaaa
   const endLabel = endAt
     ? `${endAt.getDate().toString().padStart(2, "0")}-${(endAt.getMonth() + 1)
         .toString()
         .padStart(2, "0")}-${endAt.getFullYear()}`
     : "—";
 
-  // Disponibilidad total
   const limitTotal = d?.limitTotal ?? null;
   const usedTotal = d?.usedTotal ?? 0;
   const remainingTotal =
@@ -103,7 +99,6 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
       ? Math.min(100, Math.round((usedTotal / limitTotal) * 100))
       : null;
 
-  // Porcentaje: usa el campo percentage si viene, si no intenta leerlo del título
   let percentage = d?.percentage ?? null;
   if (percentage == null && typeof d?.title === "string") {
     const match = d.title.match(/(\d+)\s*%/);
@@ -144,10 +139,8 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             />
           )}
 
-          {/* Degradado para que se lea el texto */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
 
-          {/* Badges arriba izq (solo nuevo / pronto expira) */}
           <div className="absolute left-4 top-4 flex flex-col gap-2">
             <div className="flex gap-2">
               {isNew && !soldOut && !userLimitUsed && (
@@ -163,7 +156,6 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             </div>
           </div>
 
-          {/* Badge dse estado arriba der */}
           <div className="absolute right-4 top-4">
             <span
               className={`rounded-full px-3 py-0.5 text-[11px] font-medium shadow-sm ${status.cls}`}
@@ -172,7 +164,6 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             </span>
           </div>
 
-          {/* Badge de porcentaje flotante (sin texto "DESCUENTO") */}
           {percentage != null && (
             <div className="absolute right-4 bottom-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-2 text-white shadow-xl">
               <div className="flex items-baseline gap-1">
@@ -182,7 +173,6 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             </div>
           )}
 
-          {/* Nombre negocio + título del descuento */}
           <div className="absolute bottom-4 left-4 right-4">
             {businessName && (
               <p className="mb-1 text-xs text-white/90">{businessName}</p>
@@ -201,27 +191,35 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             </p>
           )}
 
-          {/* Vigencia + Canjes (cards) */}
+          {/* Vigencia + Canjes */}
           <div className="mb-4 grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-rose-50 p-3">
+            {/* Card vigencia */}
+            <div className="rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-rose-100/80 p-3 shadow-sm">
               <div className="mb-1 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[var(--brand,#7e1515)]" />
-                <span className="text-[11px] uppercase tracking-wide text-rose-900">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/70 text-rose-700 shadow-sm">
+                  <Clock className="h-4 w-4" />
+                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-rose-900">
                   Válido hasta
                 </span>
               </div>
-              <p className="text-[13px] text-rose-900">{endLabel}</p>
+              <p className="text-[13px] font-medium text-rose-900">
+                {endLabel}
+              </p>
             </div>
 
-            <div className="rounded-lg bg-amber-50 p-3">
+            {/* Card usos por persona */}
+            <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-amber-100/80 p-3 shadow-sm">
               <div className="mb-1 flex items-center gap-2">
-                <Tag className="h-4 w-4 text-amber-600" />
-                <span className="text-[11px] uppercase tracking-wide text-amber-900">
-                  ¿Cuántas veces puedo usarlo?
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/70 text-amber-700 shadow-sm">
+                  <Tag className="h-4 w-4" />
+                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-900">
+                  ¿Cuántas veces puedes usarlo?
                 </span>
               </div>
 
-              <p className="text-[13px] text-amber-900">
+              <p className="text-[13px] font-medium text-amber-900">
                 {limitPerUser != null
                   ? `Hasta ${limitPerUser} ${
                       limitPerUser === 1 ? "vez" : "veces"
@@ -230,23 +228,28 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
               </p>
 
               {limitPerUser != null && usedByUser > 0 && (
-                <p className="mt-0.5 text-[11px] text-amber-700/80">
-                  Ya lo usaste {Math.min(usedByUser, limitPerUser)} de{" "}
-                  {limitPerUser} {limitPerUser === 1 ? "vez" : "veces"}
+                <p className="mt-0.5 text-[11px] text-amber-800/85">
+                  {remainingUserUses && remainingUserUses > 0
+                    ? `Te quedan ${remainingUserUses} ${
+                        remainingUserUses === 1 ? "uso" : "usos"
+                      }`
+                    : `Ya usaste tus ${limitPerUser} ${
+                        limitPerUser === 1 ? "uso disponible" : "usos disponibles"
+                      }.`}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Barra de disponibilidad (si hay límite total) */}
+          {/* Barra de disponibilidad */}
           {usagePct != null && remainingTotal != null && (
             <div className="mb-3">
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-wide text-slate-500">
+                <span className="text-[11px] font-medium tracking-wide text-slate-600">
                   Cupos disponibles
                 </span>
-                <span className="text-[11px] text-slate-700">
-                  {`Quedan ${remainingTotal}`}
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-800">
+                  Quedan {remainingTotal}
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-slate-100">
@@ -264,7 +267,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             </div>
           )}
 
-          {/* Botón Ver detalle con rojo institucional */}
+          {/* Botón ver detalle */}
           <div className="mt-3">
             <div
               className="inline-flex w-full items-center justify-center rounded-xl
