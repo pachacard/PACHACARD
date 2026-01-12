@@ -86,12 +86,11 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
   // Datos de negocio
   const businessName = d?.business?.name ?? "";
 
-  // Vigencia (solo fin para mostrar en la card)
+  // Vigencia (solo fin para mostrar en la card) → dd-mm-aaaa
   const endLabel = endAt
-    ? endAt.toLocaleDateString("es-PE", {
-        day: "2-digit",
-        month: "short",
-      })
+    ? `${endAt.getDate().toString().padStart(2, "0")}-${(endAt.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${endAt.getFullYear()}`
     : "—";
 
   // Disponibilidad total
@@ -208,7 +207,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
               <div className="mb-1 flex items-center gap-2">
                 <Clock className="h-4 w-4 text-[var(--brand,#7e1515)]" />
                 <span className="text-[11px] uppercase tracking-wide text-rose-900">
-                  Vigencia
+                  Válido hasta
                 </span>
               </div>
               <p className="text-[13px] text-rose-900">{endLabel}</p>
@@ -218,17 +217,22 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
               <div className="mb-1 flex items-center gap-2">
                 <Tag className="h-4 w-4 text-amber-600" />
                 <span className="text-[11px] uppercase tracking-wide text-amber-900">
-                  Canjes
+                  ¿Cuántas veces puedo usarlo?
                 </span>
               </div>
+
               <p className="text-[13px] text-amber-900">
                 {limitPerUser != null
-                  ? `${limitPerUser} usos/usuario`
-                  : "Sin límite por usuario"}
+                  ? `Hasta ${limitPerUser} ${
+                      limitPerUser === 1 ? "vez" : "veces"
+                    }`
+                  : "Sin límite por persona"}
               </p>
+
               {limitPerUser != null && usedByUser > 0 && (
                 <p className="mt-0.5 text-[11px] text-amber-700/80">
-                  Ya usaste {Math.min(usedByUser, limitPerUser)} / {limitPerUser}
+                  Ya lo usaste {Math.min(usedByUser, limitPerUser)} de{" "}
+                  {limitPerUser} {limitPerUser === 1 ? "vez" : "veces"}
                 </p>
               )}
             </div>
@@ -239,10 +243,10 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
             <div className="mb-3">
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-[11px] uppercase tracking-wide text-slate-500">
-                  Disponibilidad
+                  Cupos disponibles
                 </span>
                 <span className="text-[11px] text-slate-700">
-                  {remainingTotal} restantes
+                  {`Quedan ${remainingTotal}`}
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-slate-100">

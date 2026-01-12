@@ -281,11 +281,11 @@ export default async function Page({ searchParams }: Props) {
           {/* Estadísticas rápidas */}
           <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
             <div className="rounded-2xl bg-white/10 px-3 py-3 border border-white/15">
-              <div className="opacity-90 mb-1">Disponibles</div>
+              <div className="opacity-90 mb-1">Descuentos Disponibles</div>
               <div className="text-lg font-semibold">{totalDisponibles}</div>
             </div>
             <div className="rounded-2xl bg-white/10 px-3 py-3 border border-white/15">
-              <div className="opacity-90 mb-1">Categorías</div>
+              <div className="opacity-90 mb-1">Categorías Disponibles</div>
               <div className="text-lg font-semibold">{totalCategorias}</div>
             </div>
           </div>
