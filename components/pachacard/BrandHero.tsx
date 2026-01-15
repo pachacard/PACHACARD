@@ -16,11 +16,7 @@ export default function BrandHero() {
       />
 
       {/* Sellos esquina superior */}
-      <img
-        src="/brand/alcalde.svg"
-        alt="Enrique Cabrera Sulca - Alcalde"
-        className="select-none absolute left-6 top-6 h-14 w-auto opacity-95"
-      />
+  
       <img
         src="/brand/muni.svg"
         alt="Municipalidad Distrital de Pachacámac"

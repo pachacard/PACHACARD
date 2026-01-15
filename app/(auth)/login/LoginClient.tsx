@@ -37,7 +37,7 @@ function EyeOff(props: React.SVGProps<SVGSVGElement>) {
 }
 
 /**
- * Se muestra una barra superior con logos (alcalde y municipalidad).
+ * Se muestra una barra superior con logos ( municipalidad).
  * Se usa fallback a PNG si falla la carga de SVG.
  */
 function TopBar() {
@@ -45,18 +45,7 @@ function TopBar() {
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex items-start justify-between py-4">
-          <img
-            src="/brand/alcalde.svg"
-            alt="Enrique Cabrera Sulca - Alcalde"
-            className="pointer-events-auto h-10 sm:h-12 w-auto drop-shadow"
-            onError={(e) => {
-              const t = e.currentTarget as HTMLImageElement;
-              if (!t.dataset.fbk) {
-                t.src = "/brand/alcalde.png";
-                t.dataset.fbk = "1";
-              }
-            }}
-          />
+        
           <img
             src="/brand/muni.svg"
             alt="Municipalidad de Pachacámac"
