@@ -1,4 +1,4 @@
-// app/_components/BrandHero.tsx
+// app/components/BrandHero.tsx
 export default function BrandHero() {
   return (
     <div
@@ -20,7 +20,8 @@ export default function BrandHero() {
       <img
         src="/brand/logpa.png"
         alt="Municipalidad Distrital de Pachacámac"
-        className="select-none absolute right-6 top-6 h-14 w-auto opacity-95"
+        className="select-none absolute right-6 top-6 h-16 w-auto opacity-95"
+
       />
 
       {/* Viñeta ligera */}

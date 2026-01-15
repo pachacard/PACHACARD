@@ -45,24 +45,17 @@ function TopBar() {
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex items-start justify-between py-4">
-        
           <img
-            src="/brand/logpa.svg"
+            src="/brand/logpa.png"
             alt="Municipalidad de Pachacámac"
-            className="pointer-events-auto h-10 sm:h-12 w-auto drop-shadow"
-            onError={(e) => {
-              const t = e.currentTarget as HTMLImageElement;
-              if (!t.dataset.fbk) {
-                t.src = "/brand/logpa.png";
-                t.dataset.fbk = "1";
-              }
-            }}
+            className="pointer-events-auto h-14 sm:h-20 w-auto drop-shadow"
           />
         </div>
       </div>
     </div>
   );
 }
+
 
 /** Se renderiza el fondo institucional con degradados y arte PAC. */
 function BrandBackground() {
