@@ -1,10 +1,11 @@
-// app/components/pachacard/PachaHeader.tsx
+// app/_components/PachaHeader.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
+// LINKS estático fuera del componente (sin hooks)
 const LINKS = [
   { href: "/app", label: "Mis descuentos" },
   { href: "/app/businesses", label: "Negocios" },
@@ -12,11 +13,16 @@ const LINKS = [
   { href: "/app/history", label: "Historial" },
 ];
 
+/**
+ * Header responsive:
+ * - Mobile (md-): solo marca (logo PACHACARD). El BottomNav se encarga de la navegación.
+ * - Desktop (md+): logo + navegación superior + botón "Salir".
+ */
 export default function PachaHeader() {
   const pathname = usePathname() || "/";
   const [elevated, setElevated] = useState(false);
 
-  // Pantallas donde NO se muestra el header
+  // Rutas donde NO se muestra el header
   const hideAll =
     pathname === "/login" ||
     pathname === "/logout" ||
@@ -48,37 +54,36 @@ export default function PachaHeader() {
 
   return (
     <header
-      role="banner"
       className={[
         "sticky top-0 z-40 transition-all",
         elevated
           ? "bg-gradient-to-b from-[var(--brand)] to-[#6f1414] shadow-[0_2px_12px_rgba(0,0,0,.18)]"
           : "bg-gradient-to-b from-[var(--brand)] to-[#7f1616]",
       ].join(" ")}
+      role="banner"
     >
+      {/* un poco más alto para que respire el logo */}
       <div className="container-app h-14 md:h-16 flex items-center justify-between gap-4">
-        {/* Marca institucional + PACHACARD */}
+        {/* Marca (solo logo PACHACARD) */}
         <a
           href="/app"
-          className="group flex items-center gap-3 md:gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
-          aria-label="Ir al inicio"
+          className="group flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
+          aria-label="Ir al inicio de PACHACARD"
         >
           <img
-            src="/pachacard.png"
+            src="/pachacard-192.png" // logo cuadrado de PACHACARD
             alt="PACHACARD"
-            className="block h-8 md:h-9 w-auto rounded-[10px] shadow-sm shadow-black/30 ring-1 ring-white/20 bg-[#8f1b1b]/80 transition-transform group-hover:scale-[1.03]"
+            className="h-9 sm:h-10 md:h-11 w-auto transition-transform group-hover:scale-[1.04] drop-shadow-[0_3px_10px_rgba(0,0,0,.35)]"
+            onError={(e) => {
+              // por si acaso, fallback al anterior nombre de archivo
+              (e.currentTarget as HTMLImageElement).src = "/pachacard.png";
+            }}
           />
-          <div className="leading-tight text-white">
-            <div className="text-[10px] md:text-xs tracking-[0.16em] uppercase opacity-85">
-              Municipalidad Distrital de
-            </div>
-            <div className="font-semibold text-xs md:text-sm">
-              Pachacámac · <span className="font-bold">PACHACARD</span>
-            </div>
-          </div>
+          {/* Sólo para accesibilidad, no se ve */}
+          <span className="sr-only">PACHACARD · Municipalidad Distrital de Pachacámac</span>
         </a>
 
-        {/* Navegación solo desktop */}
+        {/* Navegación SOLO en desktop */}
         <nav className="hidden md:block" aria-label="Principal">
           <ul className="flex items-center gap-2">
             {LINKS.map((l) => (
@@ -91,20 +96,18 @@ export default function PachaHeader() {
                     "text-white/90 hover:text-white transition-colors",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
                     "group",
-                    isActive(l.href)
-                      ? "bg-white/15 shadow-inner"
-                      : "hover:bg-white/10",
+                    isActive(l.href) ? "bg-white/15 shadow-inner" : "hover:bg-white/10",
                   ].join(" ")}
                 >
                   {l.label}
                   <span
-                    aria-hidden
                     className={[
                       "pointer-events-none absolute left-2 right-2 -bottom-[2px] h-[2px] rounded-full",
                       "bg-white/70 origin-left scale-x-0 transition-transform duration-300",
                       "group-hover:scale-x-100",
                       isActive(l.href) ? "scale-x-100" : "",
                     ].join(" ")}
+                    aria-hidden
                   />
                 </a>
               </li>
@@ -120,7 +123,7 @@ export default function PachaHeader() {
           </ul>
         </nav>
 
-        {/* Espacio a la derecha para balancear */}
+        {/* Hueco derecho para balancear el layout */}
         <div className="w-8 md:w-10" aria-hidden />
       </div>
     </header>

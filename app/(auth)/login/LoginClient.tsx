@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 
-/** Iconos locales para mostrar / ocultar contraseña */
+/* Íconos para mostrar/ocultar contraseña */
 function Eye(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
@@ -33,25 +33,22 @@ function EyeOff(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-/** Barra superior con logo de la Municipalidad (más grande y legible) */
+/**
+ * Barra superior del login:
+ * - Solo el escudo de la Municipalidad
+ * - Más grande, sin texto, con fondo pill para que se vea bien.
+ */
 function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex items-start justify-start py-4 sm:py-5">
-          <div className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl bg-black/20 px-4 py-2.5 backdrop-blur-md ring-1 ring-white/20">
+        <div className="flex items-start justify-start py-4 sm:py-6">
+          <div className="pointer-events-auto rounded-full bg-black/18 px-4 py-2.5 backdrop-blur-sm shadow-[0_10px_40px_rgba(0,0,0,.45)]">
             <img
               src="/brand/logpa.png"
               alt="Municipalidad Distrital de Pachacámac"
-              className="h-10 sm:h-12 md:h-14 w-auto drop-shadow-[0_4px_14px_rgba(0,0,0,.55)]"
+              className="h-14 sm:h-16 md:h-20 w-auto drop-shadow-[0_6px_18px_rgba(0,0,0,.6)]"
             />
-            {/* Texto solo desde sm+ para no saturar en móvil chico */}
-            <div className="hidden sm:block leading-tight text-white">
-              <div className="text-[11px] tracking-[0.18em] uppercase opacity-90">
-                Municipalidad Distrital de
-              </div>
-              <div className="text-sm font-semibold">Pachacámac</div>
-            </div>
           </div>
         </div>
       </div>
@@ -59,26 +56,18 @@ function TopBar() {
   );
 }
 
-/** Fondo institucional con rojo, marca de agua PAC-WEB y degradados */
+/** Fondo institucional con PAC WEB como marca de agua */
 function BrandBackground() {
   return (
     <div aria-hidden className="absolute inset-0 -z-10">
-      {/* rojo base institucional */}
       <div className="absolute inset-0 bg-[#8F1B1B]" />
-      {/* marca de agua PACH WEB */}
-      <div className="absolute inset-0 bg-[url('/brand/pac-web.svg')] bg-cover bg-center opacity-[0.10] mix-blend-luminosity" />
-      {/* degradados para profundidad */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/25" />
+      <div className="absolute inset-0 bg-[url('/brand/pac-web.svg')] bg-cover bg-center opacity-[0.12] mix-blend-luminosity" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/25" />
       <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_50%_0%,rgba(255,255,255,.14),transparent_60%)]" />
     </div>
   );
 }
 
-/**
- * Formulario de login:
- * - Lee el parámetro "error" de NextAuth
- * - Maneja estado de inputs y submit
- */
 function LoginInner({ callbackUrl }: { callbackUrl: string }) {
   const search = useSearchParams();
   const errParam = search?.get("error");
@@ -92,7 +81,6 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [ready, setReady] = useState(false);
 
-  // Animación de entrada
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 10);
     return () => clearTimeout(t);
@@ -102,7 +90,6 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // CSRF para evitar errores raros de auth
       await fetch("/api/auth/csrf", { cache: "no-store" }).catch(() => {});
       await signIn("credentials", {
         email,
@@ -123,7 +110,7 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
             "w-full sm:w-[560px] md:w-[640px]",
             "rounded-none sm:rounded-3xl",
             "bg-white ring-1 ring-slate-200",
-            "shadow-[0_18px_70px_rgba(0,0,0,.35)]",
+            "shadow-[0_18px_70px_rgba(0,0,0,.32)]",
             "transition-all duration-500",
             ready ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
           ].join(" ")}
@@ -140,16 +127,13 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
 
             {shouldShowError && (
               <div className="mb-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                No se pudo iniciar sesión. Revisa tus datos e inténtalo
-                nuevamente.
+                No se pudo iniciar sesión. Verifica tus datos e intenta otra vez.
               </div>
             )}
 
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700">
-                  Email
-                </label>
+                <label className="text-sm font-medium text-slate-700">Email</label>
                 <input
                   type="email"
                   autoComplete="username"
@@ -168,9 +152,7 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
               </div>
 
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700">
-                  Password
-                </label>
+                <label className="text-sm font-medium text-slate-700">Password</label>
                 <div className="relative">
                   <input
                     type={show ? "text" : "password"}
@@ -187,7 +169,6 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
                     "
                   />
 
-                  {/* Botón para mostrar / ocultar contraseña */}
                   <button
                     type="button"
                     onClick={() => setShow((v) => !v)}
@@ -201,11 +182,7 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
                       transition
                     "
                   >
-                    {show ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
+                    {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
@@ -217,8 +194,8 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
                   w-full rounded-lg
                   bg-gradient-to-b from-[#9a1e1e] to-[#7e1515]
                   text-white font-medium py-2.5
-                  shadow-[0_6px_20px_rgba(0,0,0,.18)]
-                  hover:shadow-[0_10px_28px_rgba(0,0,0,.22)]
+                  shadow-[0_6px_20px_rgba(0,0,0,.12)]
+                  hover:shadow-[0_10px_28px_rgba(0,0,0,.16)]
                   active:scale-[.995]
                   transition disabled:opacity-70
                 "
@@ -228,17 +205,10 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
             </form>
 
             <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-700">
-              <div className="font-medium text-slate-800 mb-1.5">
-                ¿Necesitas ayuda?
-              </div>
+              <div className="font-medium text-slate-800 mb-1.5">¿Necesitas ayuda?</div>
               <ul className="list-disc pl-5 space-y-1">
-                <li>
-                  La contraseña es entregada por la Municipalidad junto con la
-                  PACHACARD.
-                </li>
-                <li>
-                  Si se olvida, se solicita el cambio al soporte.
-                </li>
+                <li>La contraseña es entregada por la Municipalidad junto con la PACHACARD.</li>
+                <li>Si se olvida, se solicita el cambio al soporte.</li>
               </ul>
             </div>
           </div>
@@ -248,12 +218,7 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
   );
 }
 
-/**
- * Pantalla completa de login con:
- * - Fondo institucional
- * - Barra superior con logo de la Muni
- * - Formulario dentro de Suspense (por useSearchParams)
- */
+/** Pantalla completa de login */
 export default function LoginClient({
   callbackUrl = "/app",
 }: {
