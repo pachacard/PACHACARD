@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
-// LINKS estático fuera del componente (sin hooks)
 const LINKS = [
   { href: "/app", label: "Mis descuentos" },
   { href: "/app/businesses", label: "Negocios" },
@@ -13,16 +12,10 @@ const LINKS = [
   { href: "/app/history", label: "Historial" },
 ];
 
-/**
- * Header responsive:
- * - Mobile: marca + texto (y la navegación va abajo en el BottomNav).
- * - Desktop: marca + navegación superior + botón "Salir".
- */
 export default function PachaHeader() {
   const pathname = usePathname() || "/";
   const [elevated, setElevated] = useState(false);
 
-  // Rutas donde NO se muestra el header
   const hideAll =
     pathname === "/login" ||
     pathname === "/logout" ||
@@ -62,35 +55,46 @@ export default function PachaHeader() {
       ].join(" ")}
       role="banner"
     >
-      {/* un poco más alto para que respire la marca */}
+      {/* un poco más alto para que respire el logo */}
       <div className="container-app h-14 md:h-16 flex items-center justify-between gap-4">
-        {/* Marca */}
+        {/* Marca principal */}
         <a
           href="/app"
           className="group flex items-center gap-3 md:gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
           aria-label="Ir al inicio"
         >
+          {/* ICONO PACHACARD (siempre visible, también en móvil) */}
           <img
-            src="/pachacard-192.png"
-            alt="PACHACARD · Municipalidad Distrital de Pachacámac"
-            className="h-8 sm:h-9 md:h-10 w-auto transition-transform group-hover:scale-[1.05]"
+            src="/icons/pachacard-192.png"
+            alt="PACHACARD"
+            className="
+              h-8 w-8
+              sm:h-9 sm:w-9
+              md:h-10 md:w-10
+              rounded-lg
+              bg-[#8f1b1b]
+              object-cover
+              shadow-[0_4px_14px_rgba(0,0,0,.55)]
+              transition-transform
+              group-hover:scale-[1.03]
+            "
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
 
-          {/* Texto visible también en mobile */}
+          {/* Texto institucional (visible también en móvil, pero más compacto) */}
           <div className="leading-tight text-white">
-            <div className="text-[10px] sm:text-xs uppercase tracking-[0.16em] opacity-90">
+            <div className="text-[9px] sm:text-[10px] tracking-[0.2em] uppercase opacity-85">
               MUNICIPALIDAD DISTRITAL DE
             </div>
-            <div className="text-xs sm:text-sm md:text-base font-semibold">
+            <div className="text-xs sm:text-sm font-semibold">
               Pachacámac · PACHACARD
             </div>
           </div>
         </a>
 
-        {/* Navegación SOLO en desktop */}
+        {/* Navegación en desktop */}
         <nav className="hidden md:block" aria-label="Principal">
           <ul className="flex items-center gap-2">
             {LINKS.map((l) => (
@@ -103,9 +107,7 @@ export default function PachaHeader() {
                     "text-white/90 hover:text-white transition-colors",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
                     "group",
-                    isActive(l.href)
-                      ? "bg-white/15 shadow-inner"
-                      : "hover:bg-white/10",
+                    isActive(l.href) ? "bg-white/15 shadow-inner" : "hover:bg-white/10",
                   ].join(" ")}
                 >
                   {l.label}
@@ -132,7 +134,7 @@ export default function PachaHeader() {
           </ul>
         </nav>
 
-        {/* Hueco derecho para balancear el layout */}
+        {/* Espacio a la derecha para balancear layout */}
         <div className="w-8 md:w-10" aria-hidden />
       </div>
     </header>
