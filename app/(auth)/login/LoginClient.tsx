@@ -45,21 +45,34 @@ function EyeOff(props: React.SVGProps<SVGSVGElement>) {
  * Barra superior con el escudo de la Municipalidad.
  * Se aumenta el tamaño del logo para que se aprecie mejor.
  */
+/**
+ * Barra superior con logo de la Municipalidad (login).
+ * Logo más grande + pequeño fondo semitransparente para que se lea mejor.
+ */
 function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex items-start justify-between py-4">
-          <img
-            src="/brand/logpa.png"
-            alt="Municipalidad de Pachacámac"
-            className="
-              pointer-events-auto
-              h-12 sm:h-14 md:h-16
-              w-auto
-              drop-shadow
-            "
-          />
+        <div className="flex items-start justify-start py-4 sm:py-5">
+          <div className="inline-flex items-center gap-3 rounded-full bg-black/15 px-3 py-2 backdrop-blur-sm">
+            <img
+              src="/brand/logpa.png"
+              alt="Municipalidad de Pachacámac"
+              className="
+                pointer-events-auto
+                h-12 sm:h-14 md:h-16
+                w-auto
+                drop-shadow-[0_4px_14px_rgba(0,0,0,.45)]
+              "
+            />
+            {/* Texto solo en pantallas medianas hacia arriba */}
+            <div className="hidden sm:block text-[11px] leading-tight text-white/90">
+              <div className="uppercase tracking-[0.15em] text-[10px]">
+                MUNICIPALIDAD DISTRITAL DE
+              </div>
+              <div className="text-sm font-semibold">Pachacámac</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

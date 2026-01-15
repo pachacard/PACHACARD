@@ -15,8 +15,8 @@ const LINKS = [
 
 /**
  * Header responsive:
- * - Mobile (md-): marca (logo + texto). La navegación principal va en el BottomNav.
- * - Desktop (md+): marca + navegación superior + botón "Salir".
+ * - Mobile: muestra solo la marca (logo PACHACARD). La navegación va en el BottomNav.
+ * - Desktop: marca + navegación superior + botón "Salir".
  */
 export default function PachaHeader() {
   const pathname = usePathname() || "/";
@@ -29,7 +29,6 @@ export default function PachaHeader() {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/redeem");
 
-  // Este hook SIEMPRE se llama (aunque "hideAll" sea true)
   useEffect(() => {
     if (hideAll) return;
     const onScroll = () => setElevated(window.scrollY > 6);
@@ -41,14 +40,9 @@ export default function PachaHeader() {
   if (hideAll) return null;
 
   function isActive(href: string) {
-    // normaliza para evitar dobles barras finales
     const p = (pathname || "/").replace(/\/+$/, "");
     const h = href.replace(/\/+$/, "");
-
-    // Para /app solo cuenta si estás exactamente en /app
     if (h === "/app") return p === "/app";
-
-    // Para otras rutas: coincide exacto o como prefijo con “/”
     return p === h || p.startsWith(h + "/");
   }
 
@@ -59,39 +53,51 @@ export default function PachaHeader() {
 
   return (
     <header
+      role="banner"
       className={[
         "sticky top-0 z-40 transition-all",
+        "border-b border-black/15",
         elevated
           ? "bg-gradient-to-b from-[var(--brand)] to-[#6f1414] shadow-[0_2px_12px_rgba(0,0,0,.18)]"
           : "bg-gradient-to-b from-[var(--brand)] to-[#7f1616]",
       ].join(" ")}
-      role="banner"
     >
-      {/* un poco más alto para que respire el logo */}
-      <div className="container-app h-14 md:h-16 flex items-center justify-between gap-4">
-        {/* Marca */}
+      {/* Línea de brillo superior para que se vea más institucional */}
+      <div className="h-[2px] w-full bg-white/15" aria-hidden />
+
+      <div className="container-app h-16 md:h-18 flex items-center justify-between gap-4">
+        {/* Marca PACHACARD */}
         <a
           href="/app"
-          className="group flex items-center gap-2 md:gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
+          className="group flex items-center gap-3 md:gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
           aria-label="Ir al inicio"
         >
-          {/* Logo PACHACARD visible también en mobile y más grande */}
+          {/* Logo siempre visible, más grande */}
           <img
             src="/pachacard.png"
             alt="PACHACARD - Municipalidad de Pachacámac"
-            className="h-8 sm:h-9 md:h-10 w-auto transition-transform group-hover:scale-[1.04]"
+            className="
+              h-9 sm:h-10 md:h-11
+              w-auto
+              rounded
+              bg-black/10
+              px-1.5 py-1
+              shadow-[0_4px_14px_rgba(0,0,0,.45)]
+              transition-transform
+              group-hover:scale-[1.03]
+            "
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
 
-          {/* Texto institucional */}
-          <div className="leading-none text-white">
-            <div className="text-[10px] sm:text-xs uppercase tracking-[0.16em] text-white/80">
-              Municipalidad Distrital de
+          {/* Texto solo en sm+ para no saturar el mobile */}
+          <div className="hidden sm:block leading-tight text-white">
+            <div className="text-[10px] uppercase tracking-[0.16em] opacity-85">
+              MUNICIPALIDAD DISTRITAL DE
             </div>
-            <div className="text-sm sm:text-base font-semibold">
-              PACHACÁMAC
+            <div className="text-sm md:text-base font-semibold">
+              Pachacámac · PACHACARD
             </div>
           </div>
         </a>
@@ -111,7 +117,7 @@ export default function PachaHeader() {
                     "group",
                     isActive(l.href)
                       ? "bg-white/15 shadow-inner"
-                      : "hover:bg-white/10",
+                      : "hover:bg-white/8",
                   ].join(" ")}
                 >
                   {l.label}
