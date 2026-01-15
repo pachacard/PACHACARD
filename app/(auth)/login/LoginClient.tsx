@@ -40,6 +40,7 @@ function EyeOff(props: React.SVGProps<SVGSVGElement>) {
  * Se muestra una barra superior con logos ( municipalidad).
  * Se usa fallback a PNG si falla la carga de SVG.
  */
+
 function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
@@ -48,7 +49,7 @@ function TopBar() {
           <img
             src="/brand/logpa.png"
             alt="Municipalidad de Pachacámac"
-            className="pointer-events-auto h-18 sm:h-22 w-auto drop-shadow"
+            className="pointer-events-auto h-10 sm:h-12 md:h-14 w-auto drop-shadow-lg"
           />
         </div>
       </div>

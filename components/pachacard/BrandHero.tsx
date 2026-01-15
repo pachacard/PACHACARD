@@ -16,15 +16,13 @@ export default function BrandHero() {
                   w-[1200px] sm:w-[1600px] max-w-none opacity-[0.10]"
       />
 
-
       {/* Sellos esquina superior */}
-  
       <img
         src="/brand/logpa.png"
         alt="Municipalidad Distrital de Pachacámac"
-        className="select-none absolute right-6 top-6 h-16 w-auto opacity-95"
-
+        className="select-none absolute right-6 top-6 h-14 md:h-16 w-auto opacity-95 drop-shadow"
       />
+
 
       {/* Viñeta ligera */}
       <div className="absolute inset-0 bg-black/10" />
