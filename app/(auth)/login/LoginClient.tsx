@@ -48,13 +48,14 @@ function TopBar() {
           <img
             src="/brand/logpa.png"
             alt="Municipalidad de Pachacámac"
-            className="pointer-events-auto h-14 sm:h-20 w-auto drop-shadow"
+            className="pointer-events-auto h-14 sm:h-18 md:h-20 w-auto drop-shadow-lg"
           />
         </div>
       </div>
     </div>
   );
 }
+
 
 
 /** Se renderiza el fondo institucional con degradados y arte PAC. */
