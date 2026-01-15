@@ -48,16 +48,12 @@ function TopBar() {
               shadow-[0_14px_45px_rgba(0,0,0,.55)]
             "
           >
-            <img
-              src="/brand/logpa.png"
-              alt="Municipalidad Distrital de Pachacámac"
-              className="
-                h-14 w-14
-                sm:h-16 sm:w-16
-                md:h-18 md:w-18
-                object-contain
-              "
-            />
+          <img
+            src="/brand/logpa.png"
+            alt="Municipalidad Distrital de Pachacámac"
+            className="h-14 sm:h-16 md:h-20 w-auto drop-shadow-[0_4px_14px_rgba(0,0,0,.55)]"
+          />
+
           </div>
         </div>
       </div>
