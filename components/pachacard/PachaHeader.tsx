@@ -38,7 +38,6 @@ export default function PachaHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [hideAll]);
 
-
   if (hideAll) return null;
 
   function isActive(href: string) {
@@ -52,7 +51,6 @@ export default function PachaHeader() {
     // Para otras rutas: coincide exacto o como prefijo con “/”
     return p === h || p.startsWith(h + "/");
   }
-
 
   async function doSignOut() {
     await fetch("/api/auth/csrf", { cache: "no-store" }).catch(() => {});
@@ -69,22 +67,29 @@ export default function PachaHeader() {
       ].join(" ")}
       role="banner"
     >
-      <div className="container-app h-12 sm:h-14 flex items-center justify-between gap-4">
+      {/* subo un poco la altura del header para que respire el logo */}
+      <div className="container-app h-14 md:h-16 flex items-center justify-between gap-4">
         {/* Marca */}
         <a
           href="/app"
-          className="group flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
+          className="group flex items-center gap-3 md:gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
           aria-label="Ir al inicio"
         >
           <img
             src="/pachacard.png"
-            alt=""
-            className="hidden sm:block h-6 w-auto transition-transform group-hover:scale-[1.02]"
-            onError={(e) => ((e.currentTarget.style.display = "none"))}
+            alt="PACHACARD - Municipalidad de Pachacámac"
+            className="hidden sm:block h-8 md:h-10 w-auto transition-transform group-hover:scale-[1.03]"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
           />
           <div className="leading-none text-white">
-            <div className="font-semibold tracking-wide">PACHACARD</div>
-            <div className="text-[11px] opacity-80">Municipalidad Distrital de Pachacámac</div>
+            <div className="font-semibold tracking-wide text-sm md:text-base">
+              PACHACARD
+            </div>
+            <div className="text-[10px] md:text-[11px] opacity-80">
+              Municipalidad Distrital de Pachacámac
+            </div>
           </div>
         </a>
 
@@ -128,7 +133,7 @@ export default function PachaHeader() {
           </ul>
         </nav>
 
-        {/* Hueco derecho */}
+        {/* Hueco derecho para balancear el layout */}
         <div className="w-8 md:w-10" aria-hidden />
       </div>
     </header>
