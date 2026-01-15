@@ -1,11 +1,10 @@
-// app/_components/PachaHeader.tsx
+// app/components/pachacard/PachaHeader.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
-// LINKS estático fuera del componente (sin hooks)
 const LINKS = [
   { href: "/app", label: "Mis descuentos" },
   { href: "/app/businesses", label: "Negocios" },
@@ -13,16 +12,11 @@ const LINKS = [
   { href: "/app/history", label: "Historial" },
 ];
 
-/**
- * Header responsive:
- * - Mobile: muestra solo la marca (logo PACHACARD). La navegación va en el BottomNav.
- * - Desktop: marca + navegación superior + botón "Salir".
- */
 export default function PachaHeader() {
   const pathname = usePathname() || "/";
   const [elevated, setElevated] = useState(false);
 
-  // Rutas donde NO se muestra el header
+  // Pantallas donde NO se muestra el header
   const hideAll =
     pathname === "/login" ||
     pathname === "/logout" ||
@@ -42,6 +36,7 @@ export default function PachaHeader() {
   function isActive(href: string) {
     const p = (pathname || "/").replace(/\/+$/, "");
     const h = href.replace(/\/+$/, "");
+
     if (h === "/app") return p === "/app";
     return p === h || p.startsWith(h + "/");
   }
@@ -56,53 +51,34 @@ export default function PachaHeader() {
       role="banner"
       className={[
         "sticky top-0 z-40 transition-all",
-        "border-b border-black/15",
         elevated
           ? "bg-gradient-to-b from-[var(--brand)] to-[#6f1414] shadow-[0_2px_12px_rgba(0,0,0,.18)]"
           : "bg-gradient-to-b from-[var(--brand)] to-[#7f1616]",
       ].join(" ")}
     >
-      {/* Línea de brillo superior para que se vea más institucional */}
-      <div className="h-[2px] w-full bg-white/15" aria-hidden />
-
-      <div className="container-app h-16 md:h-18 flex items-center justify-between gap-4">
-        {/* Marca PACHACARD */}
+      <div className="container-app h-14 md:h-16 flex items-center justify-between gap-4">
+        {/* Marca institucional + PACHACARD */}
         <a
           href="/app"
           className="group flex items-center gap-3 md:gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
           aria-label="Ir al inicio"
         >
-          {/* Logo siempre visible, más grande */}
           <img
             src="/pachacard.png"
-            alt="PACHACARD - Municipalidad de Pachacámac"
-            className="
-              h-9 sm:h-10 md:h-11
-              w-auto
-              rounded
-              bg-black/10
-              px-1.5 py-1
-              shadow-[0_4px_14px_rgba(0,0,0,.45)]
-              transition-transform
-              group-hover:scale-[1.03]
-            "
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
+            alt="PACHACARD"
+            className="block h-8 md:h-9 w-auto rounded-[10px] shadow-sm shadow-black/30 ring-1 ring-white/20 bg-[#8f1b1b]/80 transition-transform group-hover:scale-[1.03]"
           />
-
-          {/* Texto solo en sm+ para no saturar el mobile */}
-          <div className="hidden sm:block leading-tight text-white">
-            <div className="text-[10px] uppercase tracking-[0.16em] opacity-85">
-              MUNICIPALIDAD DISTRITAL DE
+          <div className="leading-tight text-white">
+            <div className="text-[10px] md:text-xs tracking-[0.16em] uppercase opacity-85">
+              Municipalidad Distrital de
             </div>
-            <div className="text-sm md:text-base font-semibold">
-              Pachacámac · PACHACARD
+            <div className="font-semibold text-xs md:text-sm">
+              Pachacámac · <span className="font-bold">PACHACARD</span>
             </div>
           </div>
         </a>
 
-        {/* Navegación SOLO en desktop */}
+        {/* Navegación solo desktop */}
         <nav className="hidden md:block" aria-label="Principal">
           <ul className="flex items-center gap-2">
             {LINKS.map((l) => (
@@ -117,18 +93,18 @@ export default function PachaHeader() {
                     "group",
                     isActive(l.href)
                       ? "bg-white/15 shadow-inner"
-                      : "hover:bg-white/8",
+                      : "hover:bg-white/10",
                   ].join(" ")}
                 >
                   {l.label}
                   <span
+                    aria-hidden
                     className={[
                       "pointer-events-none absolute left-2 right-2 -bottom-[2px] h-[2px] rounded-full",
                       "bg-white/70 origin-left scale-x-0 transition-transform duration-300",
                       "group-hover:scale-x-100",
                       isActive(l.href) ? "scale-x-100" : "",
                     ].join(" ")}
-                    aria-hidden
                   />
                 </a>
               </li>
@@ -144,7 +120,7 @@ export default function PachaHeader() {
           </ul>
         </nav>
 
-        {/* Hueco derecho para balancear el layout */}
+        {/* Espacio a la derecha para balancear */}
         <div className="w-8 md:w-10" aria-hidden />
       </div>
     </header>

@@ -8,12 +8,11 @@ export const metadata: Metadata = {
   title: "PACHACARD · Municipalidad Distrital de Pachacámac",
   description: "Programa de descuentos y beneficios para contribuyentes.",
   icons: {
-    icon: "/icons/pachacard-192.png",   // icono general
-    apple: "/icons/pachacard-192.png",  // icono para iOS
+    icon: "/icons/pachacard-192.png",   // favicon general
+    apple: "/icons/pachacard-192.png",  // icono para iOS / PWA
   },
 };
 
-// Viewport + themeColor para móviles
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#000000" },
@@ -40,16 +39,23 @@ export default function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1"
         />
-        {/* Manifest para que en Android use el logo y nombre al crear acceso directo */}
+        {/* Manifest para acceso directo tipo app */}
         <link rel="manifest" href="/manifest.webmanifest" />
       </head>
       <body
         className={`${inter.variable} font-sans min-h-dvh bg-[var(--bg)] text-[var(--ink)]`}
       >
+        {/* Barra superior institucional */}
         <PachaHeader />
+
+        {/* Contenido de la app */}
         <main className="container-app py-6">{children}</main>
+
+        {/* Pie institucional */}
         <footer className="container-app py-8 text-xs text-slate-500">
-          © {new Date().getFullYear()} Municipalidad Distrital de Pachacámac · PACHACARD
+          © {new Date().getFullYear()} Municipalidad Distrital de Pachacámac ·
+          {" "}
+          PACHACARD
         </footer>
       </body>
     </html>
