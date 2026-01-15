@@ -15,8 +15,8 @@ const LINKS = [
 
 /**
  * Header responsive:
- * - Mobile: logo PACHACARD (la navegación va en el BottomNav).
- * - Desktop: logo + texto + navegación + botón "Salir".
+ * - Mobile (md-): marca (logo + texto). La navegación principal va en el BottomNav.
+ * - Desktop (md+): marca + navegación superior + botón "Salir".
  */
 export default function PachaHeader() {
   const pathname = usePathname() || "/";
@@ -29,6 +29,7 @@ export default function PachaHeader() {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/redeem");
 
+  // Este hook SIEMPRE se llama (aunque "hideAll" sea true)
   useEffect(() => {
     if (hideAll) return;
     const onScroll = () => setElevated(window.scrollY > 6);
@@ -40,10 +41,14 @@ export default function PachaHeader() {
   if (hideAll) return null;
 
   function isActive(href: string) {
+    // normaliza para evitar dobles barras finales
     const p = (pathname || "/").replace(/\/+$/, "");
     const h = href.replace(/\/+$/, "");
 
+    // Para /app solo cuenta si estás exactamente en /app
     if (h === "/app") return p === "/app";
+
+    // Para otras rutas: coincide exacto o como prefijo con “/”
     return p === h || p.startsWith(h + "/");
   }
 
@@ -67,26 +72,26 @@ export default function PachaHeader() {
         {/* Marca */}
         <a
           href="/app"
-          className="group flex items-center gap-3 md:gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
+          className="group flex items-center gap-2 md:gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
           aria-label="Ir al inicio"
         >
-          {/* Logo PACHACARD visible también en mobile */}
+          {/* Logo PACHACARD visible también en mobile y más grande */}
           <img
             src="/pachacard.png"
             alt="PACHACARD - Municipalidad de Pachacámac"
-            className="block h-8 sm:h-9 md:h-10 w-auto transition-transform group-hover:scale-[1.03]"
+            className="h-8 sm:h-9 md:h-10 w-auto transition-transform group-hover:scale-[1.04]"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
 
-          {/* Texto solo en desktop para no recargar la vista móvil */}
-          <div className="hidden md:block leading-none text-white">
-            <div className="font-semibold tracking-wide text-sm md:text-base">
-              PACHACARD
+          {/* Texto institucional */}
+          <div className="leading-none text-white">
+            <div className="text-[10px] sm:text-xs uppercase tracking-[0.16em] text-white/80">
+              Municipalidad Distrital de
             </div>
-            <div className="text-[11px] opacity-80">
-              Municipalidad Distrital de Pachacámac
+            <div className="text-sm sm:text-base font-semibold">
+              PACHACÁMAC
             </div>
           </div>
         </a>

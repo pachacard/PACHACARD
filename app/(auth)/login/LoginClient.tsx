@@ -41,6 +41,10 @@ function EyeOff(props: React.SVGProps<SVGSVGElement>) {
  * Se usa fallback a PNG si falla la carga de SVG.
  */
 
+/**
+ * Barra superior con el escudo de la Municipalidad.
+ * Se aumenta el tamaño del logo para que se aprecie mejor.
+ */
 function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
@@ -49,13 +53,19 @@ function TopBar() {
           <img
             src="/brand/logpa.png"
             alt="Municipalidad de Pachacámac"
-            className="pointer-events-auto h-10 sm:h-12 md:h-14 w-auto drop-shadow-lg"
+            className="
+              pointer-events-auto
+              h-12 sm:h-14 md:h-16
+              w-auto
+              drop-shadow
+            "
           />
         </div>
       </div>
     </div>
   );
 }
+
 
 
 
