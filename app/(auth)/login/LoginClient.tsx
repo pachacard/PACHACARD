@@ -33,25 +33,31 @@ function EyeOff(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-/** Barra superior con logo de la Municipalidad (más grande y legible) */
+/** Barra superior con logo de la Municipalidad (más grande, sin texto) */
 function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex items-start justify-start py-4 sm:py-5">
-          <div className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl bg-black/20 px-4 py-2.5 backdrop-blur-md ring-1 ring-white/20">
+        <div className="flex items-start justify-start py-4 sm:py-6">
+          <div
+            className="
+              pointer-events-auto inline-flex items-center justify-center
+              rounded-full bg-black/22
+              px-3 py-3 sm:px-4 sm:py-4
+              backdrop-blur-md
+              shadow-[0_14px_45px_rgba(0,0,0,.55)]
+            "
+          >
             <img
               src="/brand/logpa.png"
               alt="Municipalidad Distrital de Pachacámac"
-              className="h-10 sm:h-12 md:h-14 w-auto drop-shadow-[0_4px_14px_rgba(0,0,0,.55)]"
+              className="
+                h-14 w-14
+                sm:h-16 sm:w-16
+                md:h-18 md:w-18
+                object-contain
+              "
             />
-            {/* Texto solo desde sm+ para no saturar en móvil chico */}
-            <div className="hidden sm:block leading-tight text-white">
-              <div className="text-[11px] tracking-[0.18em] uppercase opacity-90">
-                Municipalidad Distrital de
-              </div>
-              <div className="text-sm font-semibold">Pachacámac</div>
-            </div>
           </div>
         </div>
       </div>
@@ -65,7 +71,7 @@ function BrandBackground() {
     <div aria-hidden className="absolute inset-0 -z-10">
       {/* rojo base institucional */}
       <div className="absolute inset-0 bg-[#8F1B1B]" />
-      {/* marca de agua PACH WEB */}
+      {/* marca de agua PAC WEB */}
       <div className="absolute inset-0 bg-[url('/brand/pac-web.svg')] bg-cover bg-center opacity-[0.10] mix-blend-luminosity" />
       {/* degradados para profundidad */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/25" />
