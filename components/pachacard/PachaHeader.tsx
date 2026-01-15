@@ -15,8 +15,8 @@ const LINKS = [
 
 /**
  * Header responsive:
- * - Mobile (md-): solo marca (logo PACHACARD). El BottomNav se encarga de la navegación.
- * - Desktop (md+): logo + navegación superior + botón "Salir".
+ * - Mobile: marca + texto (y la navegación va abajo en el BottomNav).
+ * - Desktop: marca + navegación superior + botón "Salir".
  */
 export default function PachaHeader() {
   const pathname = usePathname() || "/";
@@ -62,25 +62,32 @@ export default function PachaHeader() {
       ].join(" ")}
       role="banner"
     >
-      {/* un poco más alto para que respire el logo */}
+      {/* un poco más alto para que respire la marca */}
       <div className="container-app h-14 md:h-16 flex items-center justify-between gap-4">
-        {/* Marca (solo logo PACHACARD) */}
+        {/* Marca */}
         <a
           href="/app"
-          className="group flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
-          aria-label="Ir al inicio de PACHACARD"
+          className="group flex items-center gap-3 md:gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg"
+          aria-label="Ir al inicio"
         >
           <img
-            src="/pachacard-192.png" // logo cuadrado de PACHACARD
-            alt="PACHACARD"
-            className="h-9 sm:h-10 md:h-11 w-auto transition-transform group-hover:scale-[1.04] drop-shadow-[0_3px_10px_rgba(0,0,0,.35)]"
+            src="/pachacard-192.png"
+            alt="PACHACARD · Municipalidad Distrital de Pachacámac"
+            className="h-8 sm:h-9 md:h-10 w-auto transition-transform group-hover:scale-[1.05]"
             onError={(e) => {
-              // por si acaso, fallback al anterior nombre de archivo
-              (e.currentTarget as HTMLImageElement).src = "/pachacard.png";
+              (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
-          {/* Sólo para accesibilidad, no se ve */}
-          <span className="sr-only">PACHACARD · Municipalidad Distrital de Pachacámac</span>
+
+          {/* Texto visible también en mobile */}
+          <div className="leading-tight text-white">
+            <div className="text-[10px] sm:text-xs uppercase tracking-[0.16em] opacity-90">
+              MUNICIPALIDAD DISTRITAL DE
+            </div>
+            <div className="text-xs sm:text-sm md:text-base font-semibold">
+              Pachacámac · PACHACARD
+            </div>
+          </div>
         </a>
 
         {/* Navegación SOLO en desktop */}
@@ -96,7 +103,9 @@ export default function PachaHeader() {
                     "text-white/90 hover:text-white transition-colors",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
                     "group",
-                    isActive(l.href) ? "bg-white/15 shadow-inner" : "hover:bg-white/10",
+                    isActive(l.href)
+                      ? "bg-white/15 shadow-inner"
+                      : "hover:bg-white/10",
                   ].join(" ")}
                 >
                   {l.label}

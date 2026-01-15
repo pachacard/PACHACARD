@@ -5,7 +5,9 @@ import { Suspense, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 
-/* Íconos para mostrar/ocultar contraseña */
+/**
+ * Íconos locales para mostrar/ocultar contraseña.
+ */
 function Eye(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
@@ -34,20 +36,19 @@ function EyeOff(props: React.SVGProps<SVGSVGElement>) {
 }
 
 /**
- * Barra superior del login:
- * - Solo el escudo de la Municipalidad
- * - Más grande, sin texto, con fondo pill para que se vea bien.
+ * Barra superior con escudo de la Municipalidad.
+ * Solo imagen (el propio logo ya tiene el texto) y más grande.
  */
 function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex items-start justify-start py-4 sm:py-6">
-          <div className="pointer-events-auto rounded-full bg-black/18 px-4 py-2.5 backdrop-blur-sm shadow-[0_10px_40px_rgba(0,0,0,.45)]">
+        <div className="flex items-start justify-start py-4 sm:py-5">
+          <div className="pointer-events-auto rounded-full bg-black/22 p-2 sm:p-2.5 shadow-[0_12px_40px_rgba(0,0,0,.55)] backdrop-blur-sm">
             <img
               src="/brand/logpa.png"
               alt="Municipalidad Distrital de Pachacámac"
-              className="h-14 sm:h-16 md:h-20 w-auto drop-shadow-[0_6px_18px_rgba(0,0,0,.6)]"
+              className="h-16 sm:h-20 md:h-24 w-auto"
             />
           </div>
         </div>
@@ -56,7 +57,7 @@ function TopBar() {
   );
 }
 
-/** Fondo institucional con PAC WEB como marca de agua */
+/** Fondo institucional con degradados y arte PAC. */
 function BrandBackground() {
   return (
     <div aria-hidden className="absolute inset-0 -z-10">
@@ -110,7 +111,7 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
             "w-full sm:w-[560px] md:w-[640px]",
             "rounded-none sm:rounded-3xl",
             "bg-white ring-1 ring-slate-200",
-            "shadow-[0_18px_70px_rgba(0,0,0,.32)]",
+            "shadow-[0_15px_60px_rgba(0,0,0,.28)]",
             "transition-all duration-500",
             ready ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
           ].join(" ")}
@@ -127,7 +128,7 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
 
             {shouldShowError && (
               <div className="mb-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                No se pudo iniciar sesión. Verifica tus datos e intenta otra vez.
+                No se pudo iniciar sesión. Se verifica datos y se intenta otra vez.
               </div>
             )}
 
@@ -218,12 +219,10 @@ function LoginInner({ callbackUrl }: { callbackUrl: string }) {
   );
 }
 
-/** Pantalla completa de login */
-export default function LoginClient({
-  callbackUrl = "/app",
-}: {
-  callbackUrl?: string;
-}) {
+/**
+ * Pantalla completa de login con fondo institucional.
+ */
+export default function LoginClient({ callbackUrl = "/app" }: { callbackUrl?: string }) {
   return (
     <div className="fixed inset-0 overflow-auto">
       <div className="relative min-h-full">
