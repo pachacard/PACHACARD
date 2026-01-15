@@ -47,13 +47,13 @@ function TopBar() {
         <div className="flex items-start justify-between py-4">
         
           <img
-            src="/brand/muni.svg"
+            src="/brand/logpa.svg"
             alt="Municipalidad de Pachacámac"
             className="pointer-events-auto h-10 sm:h-12 w-auto drop-shadow"
             onError={(e) => {
               const t = e.currentTarget as HTMLImageElement;
               if (!t.dataset.fbk) {
-                t.src = "/brand/muni.png";
+                t.src = "/brand/logpa.png";
                 t.dataset.fbk = "1";
               }
             }}

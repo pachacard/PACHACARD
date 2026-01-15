@@ -77,7 +77,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
   const hero =
     (Array.isArray(d?.images) ? d.images[0] : d?.images) ||
     d?.business?.imageUrl ||
-    "/brand/muni.png";
+    "/brand/logpa.png";
   const isExternal = /^https?:\/\//i.test(String(hero));
 
   const isGreyed = soldOut || userLimitUsed;

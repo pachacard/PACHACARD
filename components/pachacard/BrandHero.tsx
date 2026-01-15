@@ -18,7 +18,7 @@ export default function BrandHero() {
       {/* Sellos esquina superior */}
   
       <img
-        src="/brand/muni.svg"
+        src="/brand/logpa.png"
         alt="Municipalidad Distrital de Pachacámac"
         className="select-none absolute right-6 top-6 h-14 w-auto opacity-95"
       />
