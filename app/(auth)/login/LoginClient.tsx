@@ -62,35 +62,29 @@ function TopBar() {
 }
 
 
-/** Fondo institucional con rojo + marca PAC WEB responsiva */
+/** Fondo institucional con rojo, marca de agua PAC-WEB y degradados */
 function BrandBackground() {
   return (
     <div aria-hidden className="absolute inset-0 -z-10">
       {/* rojo base institucional */}
       <div className="absolute inset-0 bg-[#8F1B1B]" />
 
-      {/* degradados para darle profundidad */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/22 via-transparent to-black/32" />
-      <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_50%_0%,rgba(255,255,255,.16),transparent_65%)]" />
+      {/* marca de agua PAC WEB, completa y sin recorte */}
+      <div
+        className="
+          absolute inset-0
+          bg-[url('/brand/pac-web.svg')]
+          bg-center bg-contain bg-no-repeat
+          opacity-[0.14] mix-blend-luminosity
+        "
+      />
 
-      {/* única marca PAC WEB, visible en desktop y móvil */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              {/* marca de agua PAC WEB (centrada vertical, lado derecho) */}
-            <img
-              src="/brand/pac-web.svg"
-              alt=""
-              className="select-none pointer-events-none absolute
-                        right-[min(5vw,40px)] top-1/2 -translate-y-1/2
-                        w-[260px] sm:w-[320px] md:w-[380px]
-                        max-w-[55vw] max-h-[70vh]
-                        opacity-[0.12] mix-blend-luminosity"
-            />
-
-      </div>
+      {/* degradados para profundidad */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/25" />
+      <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_50%_0%,rgba(255,255,255,.14),transparent_60%)]" />
     </div>
   );
 }
-
 
 
 /**
