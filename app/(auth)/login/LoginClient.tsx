@@ -75,21 +75,17 @@ function BrandBackground() {
 
       {/* única marca PAC WEB, visible en desktop y móvil */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <img
-          src="/brand/pac-web.svg"
-          alt=""
-          className="
-            select-none
-            absolute
-            right-[-32px]         /* la “meto” un poco desde la derecha */
-            bottom-[-72px]        /* la subo un poco para que se lea WEB */
-            w-[340px]             /* tamaño base móvil */
-            sm:w-[420px]          /* tamaño en tablets */
-            lg:w-[520px]          /* tamaño en desktop */
-            max-w-[80vw]          /* nunca más grande que el viewport */
-            opacity-[0.12]
-          "
-        />
+              {/* marca de agua PAC WEB (centrada vertical, lado derecho) */}
+            <img
+              src="/brand/pac-web.svg"
+              alt=""
+              className="select-none pointer-events-none absolute
+                        right-[min(5vw,40px)] top-1/2 -translate-y-1/2
+                        w-[260px] sm:w-[320px] md:w-[380px]
+                        max-w-[55vw] max-h-[70vh]
+                        opacity-[0.12] mix-blend-luminosity"
+            />
+
       </div>
     </div>
   );
