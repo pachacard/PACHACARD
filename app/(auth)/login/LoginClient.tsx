@@ -71,7 +71,18 @@ function BrandBackground() {
 
       {/* capa de marca de agua PAC WEB */}
       <div className="absolute inset-0">
-        {/* Tablet / desktop: igual que antes */}
+        {/* Mobile: marca grande a full fondo */}
+        <div
+          className="
+            block sm:hidden
+            absolute inset-0
+            bg-[url('/brand/pac-web.svg')]
+            bg-center bg-cover bg-no-repeat
+            opacity-[0.16] mix-blend-luminosity
+          "
+        />
+
+        {/* Tablet / desktop: igual que tenías antes */}
         <div
           className="
             hidden sm:block
@@ -81,17 +92,6 @@ function BrandBackground() {
             opacity-[0.14] mix-blend-luminosity
           "
         />
-
-        {/* Mobile: imagen abajo-derecha para que siempre se vea */}
-       <div
-        className="
-          absolute inset-0
-          bg-[url('/brand/pac-web.svg')]
-          bg-center bg-cover bg-no-repeat
-          opacity-[0.16] mix-blend-luminosity
-        "
-      />
-
       </div>
 
       {/* degradados para profundidad */}
