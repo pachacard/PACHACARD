@@ -13,8 +13,11 @@ export default function BrandHero() {
         src="/brand/pac-web.svg"
         alt=""
         className="select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                  w-[1200px] sm:w-[1600px] max-w-none opacity-[0.10]"
-      />
+                  w-[700px] sm:w-[900px] lg:w-[1100px]
+                   max-w-[90vw] max-h-[80vh] h-auto
+             opacity-[0.10]"
+        />
+
 
       {/* Sellos esquina superior */}
       <img
