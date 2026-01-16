@@ -83,17 +83,15 @@ function BrandBackground() {
         />
 
         {/* Mobile: imagen abajo-derecha para que siempre se vea */}
-        <img
-          src="/brand/pac-web.svg"
-          alt=""
-          className="
-            sm:hidden
-            absolute right-[-32px] bottom-[-24px]
-            w-[230px]
-            opacity-[0.16]
-            mix-blend-luminosity
-          "
-        />
+       <div
+        className="
+          absolute inset-0
+          bg-[url('/brand/pac-web.svg')]
+          bg-center bg-cover bg-no-repeat
+          opacity-[0.16] mix-blend-luminosity
+        "
+      />
+
       </div>
 
       {/* degradados para profundidad */}
