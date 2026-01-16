@@ -33,7 +33,7 @@ function EyeOff(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-/** Barra superior con logo de la Municipalidad (más grande, sin texto) */
+/** Barra superior con logo de la Municipalidad (solo escudo, chip transparente) */
 function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
@@ -42,24 +42,25 @@ function TopBar() {
           <div
             className="
               pointer-events-auto inline-flex items-center justify-center
-              rounded-full bg-black/22
+              rounded-full
               px-3 py-3 sm:px-4 sm:py-4
-              backdrop-blur-md
-              shadow-[0_14px_45px_rgba(0,0,0,.55)]
+              bg-transparent
+              shadow-[0_18px_55px_rgba(0,0,0,.55)]
+              ring-1 ring-white/15
             "
           >
-          <img
-            src="/brand/logpa.png"
-            alt="Municipalidad Distrital de Pachacámac"
-            className="h-28 sm:h-32 md:h-36 w-auto drop-shadow-[0_4px_14px_rgba(0,0,0,.55)]"
-          />
-
+            <img
+              src="/brand/logpa.png"
+              alt="Municipalidad Distrital de Pachacámac"
+              className="h-20 sm:h-24 md:h-28 w-auto drop-shadow-[0_4px_18px_rgba(0,0,0,.65)]"
+            />
           </div>
         </div>
       </div>
     </div>
   );
 }
+
 
 /** Fondo institucional con rojo, marca de agua PAC-WEB y degradados */
 function BrandBackground() {
@@ -68,22 +69,30 @@ function BrandBackground() {
       {/* rojo base institucional */}
       <div className="absolute inset-0 bg-[#8F1B1B]" />
 
-      {/* marca de agua PAC WEB, completa y sin recorte */}
-      <div
-        className="
-          absolute inset-0
-          bg-[url('/brand/pac-web.svg')]
-          bg-center bg-contain bg-no-repeat
-          opacity-[0.14] mix-blend-luminosity
-        "
-      />
-
       {/* degradados para profundidad */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/25" />
       <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_50%_0%,rgba(255,255,255,.14),transparent_60%)]" />
+
+      {/* marca de agua PAC-WEB */}
+      <img
+        src="/brand/pac-web.svg"
+        alt=""
+        className="
+          pointer-events-none select-none
+          absolute
+          right-[-40px] bottom-[-30px]
+          w-[260px]
+          opacity-[0.14]
+
+          sm:right-0 sm:bottom-[-40px] sm:w-[340px]
+          md:right-6 md:bottom-[-50px] md:w-[420px]
+          lg:right-10 lg:bottom-[-60px] lg:w-[520px]
+        "
+      />
     </div>
   );
 }
+
 
 
 /**
