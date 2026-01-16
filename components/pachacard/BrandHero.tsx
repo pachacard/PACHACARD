@@ -13,7 +13,7 @@ export default function BrandHero() {
         src="/brand/pac-web.svg"
         alt=""
         className="select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                  w-[500px] sm:w-[700px] lg:w-[9000px]
+                  w-[700px] sm:w-[900px] lg:w-[1100px]
                    max-w-[90vw] max-h-[80vh] h-auto
              opacity-[0.10]"
         />

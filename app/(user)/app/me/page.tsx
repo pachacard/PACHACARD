@@ -265,10 +265,7 @@ export default async function MePage() {
                   <li>Si se pierde la tarjeta, se rota el token para invalidar el QR anterior.</li>
                 </ul>
 
-                <p className="text-[11px] text-slate-500">
-                  Por seguridad, el enlace exacto no se imprime en texto plano; se descarga el QR si se requiere.
-                </p>
-
+               
                 <QrActions redeemUrl={qr.url} qrSrc={qr.dataUrl} />
 
                 <div className="pt-2 border-t border-slate-200 md:hidden">

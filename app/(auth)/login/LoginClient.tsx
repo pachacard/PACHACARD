@@ -61,20 +61,33 @@ function TopBar() {
   );
 }
 
-/** Fondo institucional con rojo, marca de agua PAC-WEB y degradados */
 function BrandBackground() {
   return (
-    <div aria-hidden className="absolute inset-0 -z-10">
+    <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
       {/* rojo base institucional */}
       <div className="absolute inset-0 bg-[#8F1B1B]" />
-      {/* marca de agua PAC WEB */}
-      <div className="absolute inset-0 bg-[url('/brand/pac-web.svg')] bg-cover bg-center opacity-[0.10] mix-blend-luminosity" />
+
+      {/* Marca de agua PACH WEB centrada y más pequeña */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <img
+          src="/brand/pac-web.svg"
+          alt=""
+          className="
+            w-[520px] max-w-[80vw]
+            sm:w-[620px] sm:max-w-[70vw]
+            h-auto
+            opacity-[0.10]
+          "
+        />
+      </div>
+
       {/* degradados para profundidad */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/25" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/25" />
       <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_50%_0%,rgba(255,255,255,.14),transparent_60%)]" />
     </div>
   );
 }
+
 
 /**
  * Formulario de login:
