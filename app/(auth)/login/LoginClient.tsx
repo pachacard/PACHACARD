@@ -69,15 +69,32 @@ function BrandBackground() {
       {/* rojo base institucional */}
       <div className="absolute inset-0 bg-[#8F1B1B]" />
 
-      {/* marca de agua PAC WEB, completa y sin recorte */}
-      <div
-        className="
-          absolute inset-0
-          bg-[url('/brand/pac-web.svg')]
-          bg-center bg-contain bg-no-repeat
-          opacity-[0.14] mix-blend-luminosity
-        "
-      />
+      {/* capa de marca de agua PAC WEB */}
+      <div className="absolute inset-0">
+        {/* Tablet / desktop: igual que antes */}
+        <div
+          className="
+            hidden sm:block
+            absolute inset-0
+            bg-[url('/brand/pac-web.svg')]
+            bg-center bg-contain bg-no-repeat
+            opacity-[0.14] mix-blend-luminosity
+          "
+        />
+
+        {/* Mobile: imagen abajo-derecha para que siempre se vea */}
+        <img
+          src="/brand/pac-web.svg"
+          alt=""
+          className="
+            sm:hidden
+            absolute right-[-32px] bottom-[-24px]
+            w-[230px]
+            opacity-[0.16]
+            mix-blend-luminosity
+          "
+        />
+      </div>
 
       {/* degradados para profundidad */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/25" />
