@@ -51,7 +51,7 @@ function TopBar() {
           <img
             src="/brand/logpa.png"
             alt="Municipalidad Distrital de Pachacámac"
-            className="h-14 sm:h-16 md:h-20 w-auto drop-shadow-[0_4px_14px_rgba(0,0,0,.55)]"
+            className="h-16 sm:h-18 md:h-22 w-auto drop-shadow-[0_4px_14px_rgba(0,0,0,.55)]"
           />
 
           </div>
