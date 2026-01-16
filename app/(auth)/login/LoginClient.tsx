@@ -62,33 +62,35 @@ function TopBar() {
 }
 
 
-/** Fondo institucional con rojo, marca de agua PAC-WEB y degradados */
+/** Fondo institucional con rojo + marca PAC WEB responsiva */
 function BrandBackground() {
   return (
     <div aria-hidden className="absolute inset-0 -z-10">
       {/* rojo base institucional */}
       <div className="absolute inset-0 bg-[#8F1B1B]" />
 
-      {/* degradados para profundidad */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/25" />
-      <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_50%_0%,rgba(255,255,255,.14),transparent_60%)]" />
+      {/* degradados para darle profundidad */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/22 via-transparent to-black/32" />
+      <div className="absolute inset-0 bg-[radial-gradient(60%_40%_at_50%_0%,rgba(255,255,255,.16),transparent_65%)]" />
 
-      {/* marca de agua PAC-WEB */}
-      <img
-        src="/brand/pac-web.svg"
-        alt=""
-        className="
-          pointer-events-none select-none
-          absolute
-          right-[-40px] bottom-[-30px]
-          w-[260px]
-          opacity-[0.14]
-
-          sm:right-0 sm:bottom-[-40px] sm:w-[340px]
-          md:right-6 md:bottom-[-50px] md:w-[420px]
-          lg:right-10 lg:bottom-[-60px] lg:w-[520px]
-        "
-      />
+      {/* única marca PAC WEB, visible en desktop y móvil */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <img
+          src="/brand/pac-web.svg"
+          alt=""
+          className="
+            select-none
+            absolute
+            right-[-32px]         /* la “meto” un poco desde la derecha */
+            bottom-[-72px]        /* la subo un poco para que se lea WEB */
+            w-[340px]             /* tamaño base móvil */
+            sm:w-[420px]          /* tamaño en tablets */
+            lg:w-[520px]          /* tamaño en desktop */
+            max-w-[80vw]          /* nunca más grande que el viewport */
+            opacity-[0.12]
+          "
+        />
+      </div>
     </div>
   );
 }
