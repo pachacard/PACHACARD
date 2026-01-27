@@ -1,4 +1,4 @@
-// app/_components/BusinessCard.tsx
+// components/pachacard/BusinessCard.tsx
 "use client";
 
 import Image from "next/image";
@@ -94,12 +94,16 @@ export default function BusinessCard({ business }: { business: BusinessLite }) {
           {/* Degradado para legibilidad */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
 
-          {/* Categoría + nombre negocio */}
-          <div className="absolute left-4 bottom-4 right-4">
-            <span className="inline-block rounded-full bg-black/45 px-3 py-1 text-xs text-white border border-white/20">
+          {/* Categoría arriba del bloque */}
+          <div className="absolute left-4 top-3">
+            <span className="inline-block rounded-full bg-black/55 px-3 py-1 text-xs text-white border border-white/20">
               {categoryName}
             </span>
-            <h3 className="mt-2 text-base font-semibold text-white leading-snug">
+          </div>
+
+          {/* Nombre del negocio abajo */}
+          <div className="absolute left-4 bottom-4 right-4">
+            <h3 className="text-base font-semibold text-white leading-snug drop-shadow-[0_2px_6px_rgba(0,0,0,.6)]">
               {b.name}
             </h3>
           </div>
