@@ -2,6 +2,7 @@
 import { getBusinesses, getCategoriesWithCounts } from "@/lib/db";
 import CategoryPills from "@/components/pachacard/CategoryPills";
 import BusinessCard from "@/components/pachacard/BusinessCard";
+import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +11,17 @@ type Props = { searchParams?: { cat?: string } };
 export default async function NegociosPage({ searchParams }: Props) {
   const current = searchParams?.cat || undefined;
 
+  // Sesión del usuario (id, role, tier, etc.)
+  const session = await auth();
+  const tier = session?.user?.tier as
+    | "BASIC"
+    | "NORMAL"
+    | "PREMIUM"
+    | undefined;
+
+  // Ahora las categorías se calculan filtrando por el tier del usuario
   const [cats, businesses] = await Promise.all([
-    getCategoriesWithCounts(),
+    getCategoriesWithCounts(tier),
     getBusinesses({ categorySlug: current }),
   ]);
 
