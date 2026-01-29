@@ -239,9 +239,10 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
                   Válido hasta
                 </span>
               </div>
-              <p className="text-[13px] font-medium text-rose-900">
+             <p className="mt-0.5 text-[13px] font-medium text-rose-900 text-center">
                 {endLabel}
-              </p>
+            </p>
+
             </div>
 
             {/* Card usos por persona (opción B) */}
