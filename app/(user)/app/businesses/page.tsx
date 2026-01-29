@@ -1,27 +1,42 @@
 // app/(user)/app/businesses/page.tsx
-import { getBusinesses, getCategoriesWithCounts } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import {
+  getBusinesses,
+  getCategoriesWithCountsForUser,
+} from "@/lib/db";
 import CategoryPills from "@/components/pachacard/CategoryPills";
 import BusinessCard from "@/components/pachacard/BusinessCard";
-import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 type Props = { searchParams?: { cat?: string } };
 
+type Tier = "BASIC" | "NORMAL" | "PREMIUM";
+
+// Normaliza tier; si no hay sesión o viene raro, devuelve undefined (sin filtro)
+function normalizeTier(t: unknown): Tier | undefined {
+  if (!t) return undefined;
+  const k = String(t).trim().toUpperCase();
+  if (k === "BASIC" || k === "NORMAL" || k === "PREMIUM") return k;
+  return "BASIC";
+}
+
 export default async function NegociosPage({ searchParams }: Props) {
   const current = searchParams?.cat || undefined;
 
-  // Sesión del usuario (id, role, tier, etc.)
-  const session = await auth();
-  const tier = session?.user?.tier as
-    | "BASIC"
-    | "NORMAL"
-    | "PREMIUM"
-    | undefined;
+  // --- obtener sesión de forma segura (que no rompa la página) ---
+  let tier: Tier | undefined;
+  try {
+    const session = await auth();
+    tier = normalizeTier(session?.user?.tier);
+  } catch (err) {
+    console.error("Error obteniendo sesión en NegociosPage:", err);
+    tier = undefined; // sin sesión, mostramos todo
+  }
 
-  // Ahora las categorías se calculan filtrando por el tier del usuario
+  // --- consultas a BD ---
   const [cats, businesses] = await Promise.all([
-    getCategoriesWithCounts(tier),
+    getCategoriesWithCountsForUser(tier),
     getBusinesses({ categorySlug: current }),
   ]);
 
