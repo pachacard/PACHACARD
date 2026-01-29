@@ -1,3 +1,4 @@
+//components/pachacard/DiscountCard.tsx
 "use client";
 
 import Image from "next/image";
@@ -51,6 +52,7 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
     limitPerUser != null && usedByUser >= limitPerUser ? true : false;
   const remainingUserUses =
     limitPerUser != null ? Math.max(0, limitPerUser - usedByUser) : null;
+  const hasLimitPerUser = limitPerUser != null;
 
   const status = useMemo(() => {
     if (soldOut)
@@ -219,23 +221,33 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
                 </span>
               </div>
 
+              {/* Línea principal: diferente si ya no tiene usos */}
               <p className="text-[13px] font-medium text-amber-900">
-                {limitPerUser != null
-                  ? `Hasta ${limitPerUser} ${
-                      limitPerUser === 1 ? "vez" : "veces"
-                    }`
+                {hasLimitPerUser
+                  ? userLimitUsed
+                    ? "Ya no tienes usos disponibles"
+                    : `Hasta ${limitPerUser} ${
+                        limitPerUser === 1 ? "vez" : "veces"
+                      }`
                   : "Sin límite por persona"}
               </p>
 
-              {limitPerUser != null && usedByUser > 0 && (
+              {/* Mensaje secundario más natural */}
+              {hasLimitPerUser && usedByUser > 0 && !userLimitUsed && remainingUserUses != null && remainingUserUses > 0 && (
                 <p className="mt-0.5 text-[11px] text-amber-800/85">
-                  {remainingUserUses && remainingUserUses > 0
-                    ? `Te quedan ${remainingUserUses} ${
-                        remainingUserUses === 1 ? "uso" : "usos"
-                      }`
-                    : `Ya usaste tus ${limitPerUser} ${
-                        limitPerUser === 1 ? "uso disponible" : "usos disponibles"
-                      }.`}
+                  Has usado {usedByUser}{" "}
+                  {usedByUser === 1 ? "vez" : "veces"}.{" "}
+                  {remainingUserUses === 1
+                    ? "Te queda 1 uso disponible."
+                    : `Te quedan ${remainingUserUses} usos disponibles.`}
+                </p>
+              )}
+
+              {hasLimitPerUser && userLimitUsed && (
+                <p className="mt-0.5 text-[11px] text-amber-800/85">
+                  {limitPerUser === 1
+                    ? "Ya utilizaste tu único uso disponible de este descuento."
+                    : `Ya utilizaste tus ${limitPerUser} usos disponibles de este descuento.`}
                 </p>
               )}
             </div>
@@ -270,10 +282,14 @@ export default function DiscountCard({ discount }: { discount: Discount }) {
           {/* Botón ver detalle */}
           <div className="mt-3">
             <div
-              className="inline-flex w-full items-center justify-center rounded-xl
-                         bg-gradient-to-b from-[#9a1e1e] to-[#7e1515] px-4 py-2.5
-                         text-sm font-medium text-white shadow-[0_6px_20px_rgba(0,0,0,.20)]
-                         transition group-hover:shadow-[0_10px_28px_rgba(0,0,0,.25)]"
+              className={`inline-flex w-full items-center justify-center rounded-xl
+                         bg-gradient-to-b px-4 py-2.5 text-sm font-medium
+                         transition
+                ${
+                  isGreyed
+                    ? "from-slate-200 to-slate-300 text-slate-600 shadow-none"
+                    : "from-[#9a1e1e] to-[#7e1515] text-white shadow-[0_6px_20px_rgba(0,0,0,.20)] group-hover:shadow-[0_10px_28px_rgba(0,0,0,.25)]"
+                }`}
             >
               Ver detalle
             </div>
