@@ -26,7 +26,7 @@ export default async function SiteHeader() {
 
           {session?.user && role !== "ADMIN" && (
             <>
-              <Link href="/app">Mis descuentos</Link>
+              <Link href="/app">Mis beneficios</Link>
               <Link href="/app/me">Mi información (QR)</Link>
               <Link href="/app/history">Historial</Link>
               <LogoutButton />

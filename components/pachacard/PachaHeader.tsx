@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 const LINKS = [
-  { href: "/app", label: "Mis descuentos" },
+  { href: "/app", label: "Mis beneficios" },
   { href: "/app/businesses", label: "Negocios" },
   { href: "/app/me", label: "Mi información (QR)" },
   { href: "/app/history", label: "Historial" },

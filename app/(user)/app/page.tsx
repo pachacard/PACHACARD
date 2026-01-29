@@ -261,7 +261,7 @@ export default async function Page({ searchParams }: Props) {
         {/* Hero superior */}
         <section className="rounded-3xl bg-gradient-to-b from-[#9a1e1e] to-[#7e1515] px-5 py-4 text-white shadow-lg">
           <div className="mb-3 text-xs uppercase tracking-[0.18em] opacity-80">
-            MIS DESCUENTOS
+            MIS BENEFICIOS
           </div>
 
           <div className="flex items-start justify-between gap-4">
