@@ -85,13 +85,14 @@ export default function PachaHeader() {
 
           {/* Texto institucional (visible también en móvil, pero más compacto) */}
           <div className="leading-tight text-white">
-            <div className="text-[9px] sm:text-[10px] tracking-[0.2em] uppercase opacity-85">
+            <div className="text-xs sm:text-sm font-semibold">
               MUNICIPALIDAD DISTRITAL DE
             </div>
             <div className="text-xs sm:text-sm font-semibold">
-              Pachacámac · PACHACARD
+              PACHACÁMAC · PACHACARD
             </div>
           </div>
+
         </a>
 
         {/* Navegación en desktop */}
