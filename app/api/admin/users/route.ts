@@ -13,6 +13,7 @@ import { auth } from "@/lib/auth";
  *
  * Campos esperados:
  * - name, email, password (requeridos)
+ * - legacyContributorCode (opcional)
  * - tier (default BASIC)
  * - role (default USER)
  * - status (default ACTIVE)
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
   const name = String(b.name || "").trim();
   const email = String(b.email || "").toLowerCase().trim();
   const password = String(b.password || "");
+  const legacyContributorCode = String(b.legacyContributorCode || "").trim() || null;
   const tier = String(b.tier || "BASIC");
   const role = String(b.role || "USER");
   const status = String(b.status || "ACTIVE");
@@ -47,6 +49,7 @@ export async function POST(req: Request) {
         name,
         email,
         passwordHash: hash,
+        legacyContributorCode,
         tier,
         role,
         status,
@@ -57,8 +60,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, id: created.id });
   } catch (e: any) {
     if (e?.code === "P2002") {
-      return NextResponse.json({ ok: false, error: "Email duplicado" }, { status: 409 });
+      const target = e?.meta?.target;
+
+      if (Array.isArray(target) && target.includes("legacyContributorCode")) {
+        return NextResponse.json(
+          { ok: false, error: "Código contribuyente anterior duplicado" },
+          { status: 409 }
+        );
+      }
+
+      if (Array.isArray(target) && target.includes("email")) {
+        return NextResponse.json(
+          { ok: false, error: "Email duplicado" },
+          { status: 409 }
+        );
+      }
+
+      return NextResponse.json(
+        { ok: false, error: "Registro duplicado" },
+        { status: 409 }
+      );
     }
+
+    console.error(e);
     return NextResponse.json({ ok: false, error: "Error" }, { status: 500 });
   }
 }

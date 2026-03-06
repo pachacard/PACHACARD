@@ -7,6 +7,7 @@ export default function UserForm({ item }: { item: User }) {
   const [f, setF] = useState({
     name: item.name,
     email: item.email,
+    legacyContributorCode: item.legacyContributorCode ?? "",
     tier: item.tier,
     role: item.role,
     status: item.status,
@@ -82,6 +83,21 @@ export default function UserForm({ item }: { item: User }) {
             value={f.email}
             onChange={(e) => setF({ ...f, email: e.target.value.toLowerCase() })}
           />
+        </div>
+
+        <div>
+          <label className="label">Código contribuyente anterior</label>
+          <input
+            className="input"
+            value={f.legacyContributorCode}
+            onChange={(e) =>
+              setF({ ...f, legacyContributorCode: e.target.value.trim() })
+            }
+            placeholder="Ej. 210763"
+          />
+          <p className="help">
+            Opcional. Solo para usuarios provenientes del sistema anterior.
+          </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-3">

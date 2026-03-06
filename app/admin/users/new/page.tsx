@@ -7,6 +7,7 @@ export default function NewUserPage() {
     name: "",
     email: "",
     password: "",
+    legacyContributorCode: "",
     tier: "BASIC",
     role: "USER",
     status: "ACTIVE",
@@ -55,6 +56,19 @@ export default function NewUserPage() {
               value={f.email}
               onChange={(e) => setF({ ...f, email: e.target.value.trim().toLowerCase() })}
             />
+          </div>
+
+          <div>
+            <label className="label">Código contribuyente anterior</label>
+            <input
+              className="input"
+              value={f.legacyContributorCode}
+              onChange={(e) =>
+                setF({ ...f, legacyContributorCode: e.target.value.trim() })
+              }
+              placeholder="Ej. 210763"
+            />
+            <p className="help">Opcional. Solo para usuarios del sistema anterior.</p>
           </div>
 
           <div>

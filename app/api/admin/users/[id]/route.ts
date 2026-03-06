@@ -8,7 +8,7 @@ import { auth } from "@/lib/auth";
  * Endpoint admin para gestionar un usuario específico.
  *
  * PUT:
- * - Actualiza datos básicos (name, email, tier, role, status)
+ * - Actualiza datos básicos (name, email, legacyContributorCode, tier, role, status)
  * - Opcional: cambia contraseña (password -> passwordHash)
  * - Opcional: rota tokenVersion (invalida QRs anteriores si ENFORCE_TV está activo en canje)
  *
@@ -31,6 +31,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
   if (typeof b.name === "string") data.name = b.name.trim();
   if (typeof b.email === "string") data.email = b.email.toLowerCase().trim();
+  if (typeof b.legacyContributorCode === "string") {
+    data.legacyContributorCode = b.legacyContributorCode.trim() || null;
+  }
   if (typeof b.tier === "string") data.tier = b.tier;
   if (typeof b.role === "string") data.role = b.role;
   if (typeof b.status === "string") data.status = b.status;
@@ -53,10 +56,30 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    // P2002 suele ser unique constraint (ej: email duplicado)
     if (e?.code === "P2002") {
-      return NextResponse.json({ ok: false, error: "Email duplicado" }, { status: 409 });
+      const target = e?.meta?.target;
+
+      if (Array.isArray(target) && target.includes("legacyContributorCode")) {
+        return NextResponse.json(
+          { ok: false, error: "Código contribuyente anterior duplicado" },
+          { status: 409 }
+        );
+      }
+
+      if (Array.isArray(target) && target.includes("email")) {
+        return NextResponse.json(
+          { ok: false, error: "Email duplicado" },
+          { status: 409 }
+        );
+      }
+
+      return NextResponse.json(
+        { ok: false, error: "Registro duplicado" },
+        { status: 409 }
+      );
     }
+
+    console.error(e);
     return NextResponse.json({ ok: false, error: "Error" }, { status: 500 });
   }
 }
