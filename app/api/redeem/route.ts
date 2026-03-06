@@ -1,3 +1,4 @@
+//app\api\redeem\route.ts
 import { NextResponse } from "next/server";
 import { verifyQrToken } from "@/lib/token";
 import { prisma } from "@/lib/prisma";
