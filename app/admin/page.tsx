@@ -53,16 +53,15 @@ function ActionChip({ href, children }: { href: string; children: React.ReactNod
 }
 
 export default async function AdminHome() {
-  // No cache (cada request recuenta en la BD)
   noStore();
 
-  // Lee los conteos reales desde la BD
-  const [usersCount, businessesCount, discountsCount, redemptionsCount] =
+  const [usersCount, businessesCount, discountsCount, redemptionsCount, auditCount] =
     await Promise.all([
       prisma.user.count(),
       prisma.business.count(),
       prisma.discount.count(),
       prisma.redemption.count(),
+      prisma.auditLog.count(),
     ]);
 
   return (
@@ -74,20 +73,20 @@ export default async function AdminHome() {
           </h1>
         </header>
 
-        {/* tarjetas: 1 col en móvil, 2 en tablet, 4 en desktop */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard label="Usuarios" value={usersCount} href="/admin/users" />
           <StatCard label="Negocios" value={businessesCount} href="/admin/businesses" />
           <StatCard label="Descuentos" value={discountsCount} href="/admin/discounts" />
           <StatCard label="Canjes" value={redemptionsCount} href="/admin/redemptions" />
+          <StatCard label="Auditoría" value={auditCount} href="/admin/audit" />
         </section>
 
-        {/* acciones rápidas */}
         <section className="mt-6 flex flex-wrap gap-3">
           <ActionChip href="/admin/businesses">Negocios</ActionChip>
           <ActionChip href="/admin/discounts">Descuentos</ActionChip>
           <ActionChip href="/admin/redemptions">Redemptions</ActionChip>
           <ActionChip href="/admin/users">Usuarios</ActionChip>
+          <ActionChip href="/admin/audit">Auditoría</ActionChip>
         </section>
       </div>
     </main>
