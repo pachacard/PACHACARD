@@ -46,11 +46,11 @@ export async function middleware(req: NextRequest) {
    * - secureCookie: true asume entorno https; si pruebas local en http y tienes problemas,
    *   podrías condicionarlo por NODE_ENV (pero en producción debe ser true).
    */
-  const token = await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-    secureCookie: true,
-  });
+ const token = await getToken({
+  req,
+  secret: process.env.NEXTAUTH_SECRET,
+  secureCookie: process.env.NODE_ENV === "production",
+});
 
   const role = (token as any)?.role || "USER";
 
