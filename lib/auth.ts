@@ -24,7 +24,7 @@ import type { JWT } from "next-auth/jwt";
  *
  * Problema que resuelve:
  * - Por defecto, Session.user solo tiene { name, email, image }.
- * - Tú necesitas id, role y tier en toda la app (y para permisos).
+ * - Solo se necesita id, role y tier en toda la app (y para permisos).
  *
  * Nota:
  * - Se extiende User (lo que devuelve authorize)
