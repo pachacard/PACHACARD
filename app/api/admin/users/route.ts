@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 /**
  * POST /api/admin/users
@@ -55,6 +56,26 @@ export async function POST(req: Request) {
         status,
       },
       select: { id: true },
+    });
+
+    await writeAuditLog({
+      actorId: (session.user as any).id ?? null,
+      actorEmail: session.user.email ?? null,
+      action: "CREATE",
+      module: "USERS",
+      entity: "User",
+      entityId: created.id,
+      description: "Creación de usuario desde panel admin",
+      newValues: {
+        name,
+        email,
+        legacyContributorCode,
+        tier,
+        role,
+        status,
+      },
+      ip: req.headers.get("x-forwarded-for"),
+      userAgent: req.headers.get("user-agent"),
     });
 
     return NextResponse.json({ ok: true, id: created.id });

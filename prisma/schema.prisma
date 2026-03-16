@@ -176,3 +176,25 @@ model BusinessCategory {
   @@id([businessId, categoryId])
   @@index([categoryId])
 }
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  actorEmail  String?
+  action      String
+  module      String
+  entity      String?
+  entityId    String?
+  description String?
+  oldValues   Json?
+  newValues   Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([module])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
