@@ -361,11 +361,18 @@ textarea.input {
 }
 
 .admin-chip {
-  @apply inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/10 bg-[var(--brand)]/5 px-3 py-1 text-xs font-medium text-[var(--brand)];
+  @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium;
+  border-color: rgb(143 27 27 / 0.1);
+  background-color: rgb(143 27 27 / 0.05);
+  color: var(--brand);
 }
 
 .admin-table-row {
-  @apply rounded-2xl border border-slate-200/80 bg-white/75 p-4 transition hover:border-[var(--brand)]/20 hover:bg-white;
+  @apply rounded-2xl border border-slate-200/80 bg-white/75 p-4 transition hover:bg-white;
+}
+
+.admin-table-row:hover {
+  border-color: rgb(143 27 27 / 0.2);
 }
 
 /* =========================
