@@ -68,7 +68,7 @@ function StatCard({
             {value}
           </div>
         </div>
-        <div className="rounded-2xl bg-[var(--brand)]/8 p-3 text-[var(--brand)]">
+        <div className="admin-icon-badge">
           <Icon className="h-5 w-5" />
         </div>
       </div>

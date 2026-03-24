@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { User } from "@prisma/client";
 
 export default function UserForm({ item }: { item: User }) {
+  const router = useRouter();
   const [f, setF] = useState({
     name: item.name,
     email: item.email,
@@ -59,7 +62,7 @@ export default function UserForm({ item }: { item: User }) {
   async function remove() {
     if (!confirm("¿Eliminar usuario? Esta accion es permanente.")) return;
     const r = await fetch(`/api/admin/users/${item.id}`, { method: "DELETE" });
-    if (r.ok) location.href = "/admin/users";
+    if (r.ok) router.push("/admin/users");
     else alert("No se pudo eliminar");
   }
 
@@ -67,9 +70,7 @@ export default function UserForm({ item }: { item: User }) {
     <div className="admin-panel">
       <div className="space-y-5">
         <div>
-          <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
-            Usuarios
-          </div>
+          <div className="admin-kicker">Usuarios</div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
             Editar usuario
           </h1>
@@ -129,7 +130,7 @@ export default function UserForm({ item }: { item: User }) {
             {saving ? "Guardando..." : "Guardar cambios"}
           </button>
           <button className="btn btn-danger" onClick={remove}>Eliminar usuario</button>
-          <a href="/admin/users" className="btn btn-outline">Volver</a>
+          <Link href="/admin/users" className="btn btn-outline">Volver</Link>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">

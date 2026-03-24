@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import type { Business } from "@prisma/client";
 import { MapPin, Plus, Store } from "lucide-react";
@@ -19,9 +20,7 @@ export default async function Page() {
         <section className="admin-panel">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
-                Modulo
-              </div>
+              <div className="admin-kicker">Modulo</div>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                 Negocios afiliados
               </h1>
@@ -30,18 +29,18 @@ export default async function Page() {
                 directorio comercial.
               </p>
             </div>
-            <a className="btn btn-primary gap-2" href="/admin/businesses/new">
+            <Link className="btn btn-primary gap-2" href="/admin/businesses/new">
               <Plus className="h-4 w-4" />
               Nuevo negocio
-            </a>
+            </Link>
           </div>
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {items.map((b) => (
-            <a key={b.id} className="admin-list-card" href={`/admin/businesses/${b.id}`}>
+            <Link key={b.id} className="admin-list-card" href={`/admin/businesses/${b.id}`}>
               <div className="flex items-start justify-between gap-4">
-                <div className="rounded-2xl bg-[var(--brand)]/8 p-3 text-[var(--brand)]">
+                <div className="admin-icon-badge">
                   <Store className="h-5 w-5" />
                 </div>
                 <span className="admin-chip">{translateStatus(b.status)}</span>
@@ -56,7 +55,7 @@ export default async function Page() {
                 <MapPin className="h-4 w-4" />
                 <span className="line-clamp-1">{b.address || "Sin direccion registrada"}</span>
               </div>
-            </a>
+            </Link>
           ))}
         </section>
       </div>

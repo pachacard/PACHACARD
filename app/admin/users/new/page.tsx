@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function NewUserPage() {
+  const router = useRouter();
   const [f, setF] = useState({
     name: "",
     email: "",
@@ -26,7 +29,7 @@ export default function NewUserPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(f),
       });
-      if (r.ok) location.href = "/admin/users";
+      if (r.ok) router.push("/admin/users");
       else alert("Error al crear usuario");
     } finally {
       setSaving(false);
@@ -39,9 +42,7 @@ export default function NewUserPage() {
         <div className="mx-auto max-w-3xl admin-panel">
           <div className="space-y-5">
             <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
-                Usuarios
-              </div>
+              <div className="admin-kicker">Usuarios</div>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                 Nuevo usuario
               </h1>
@@ -110,7 +111,7 @@ export default function NewUserPage() {
               <button className="btn btn-primary" onClick={save} disabled={saving}>
                 {saving ? "Guardando..." : "Crear usuario"}
               </button>
-              <a href="/admin/users" className="btn btn-outline">Volver</a>
+              <Link href="/admin/users" className="btn btn-outline">Volver</Link>
             </div>
           </div>
         </div>

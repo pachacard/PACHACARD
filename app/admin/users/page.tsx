@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -73,9 +74,7 @@ export default async function AdminUsersPage({ searchParams }: SearchParams) {
         <section className="admin-panel">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
-                Modulo
-              </div>
+              <div className="admin-kicker">Modulo</div>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                 Usuarios registrados
               </h1>
@@ -83,10 +82,10 @@ export default async function AdminUsersPage({ searchParams }: SearchParams) {
                 Filtra por nivel, rol o estado y gestiona accesos del panel y del portal.
               </p>
             </div>
-            <a className="btn btn-primary gap-2" href="/admin/users/new">
+            <Link className="btn btn-primary gap-2" href="/admin/users/new">
               <Plus className="h-4 w-4" />
               Nuevo usuario
-            </a>
+            </Link>
           </div>
         </section>
 
@@ -140,10 +139,10 @@ export default async function AdminUsersPage({ searchParams }: SearchParams) {
 
         <section className="grid gap-3">
           {items.map((u) => (
-            <a key={u.id} href={`/admin/users/${u.id}`} className="admin-table-row">
+            <Link key={u.id} href={`/admin/users/${u.id}`} className="admin-table-row">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-start gap-4">
-                  <div className="rounded-2xl bg-[var(--brand)]/8 p-3 text-[var(--brand)]">
+                  <div className="admin-icon-badge">
                     <Users className="h-5 w-5" />
                   </div>
                   <div>
@@ -161,7 +160,7 @@ export default async function AdminUsersPage({ searchParams }: SearchParams) {
                   <span className="admin-chip">{translateStatus(u.status)}</span>
                 </div>
               </div>
-            </a>
+            </Link>
           ))}
           {items.length === 0 && (
             <div className="admin-panel text-sm text-slate-500">No se encontraron usuarios.</div>

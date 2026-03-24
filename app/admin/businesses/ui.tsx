@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 export type Biz = {
@@ -15,6 +17,7 @@ export type Biz = {
 };
 
 export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
+  const router = useRouter();
   const [f, setF] = useState<Biz>({
     id: item?.id,
     code: item?.code ?? "",
@@ -96,7 +99,7 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
       });
       const json = await r.json().catch(() => ({} as any));
       if (!r.ok || json?.ok === false) throw new Error(json?.message || "Error al guardar");
-      location.href = "/admin/businesses";
+      router.push("/admin/businesses");
     } catch (err: any) {
       alert(err?.message || "Error al guardar");
     } finally {
@@ -116,9 +119,7 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
             }}
           >
             <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
-                Negocios
-              </div>
+              <div className="admin-kicker">Negocios</div>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                 {f.id ? "Editar negocio" : "Nuevo negocio"}
               </h1>
@@ -236,9 +237,9 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
               <button type="submit" className="btn btn-primary" disabled={saving || readingFile}>
                 {saving ? "Guardando..." : "Guardar negocio"}
               </button>
-              <a href="/admin/businesses" className="btn btn-outline">
+              <Link href="/admin/businesses" className="btn btn-outline">
                 Volver
-              </a>
+              </Link>
             </div>
           </form>
         </div>

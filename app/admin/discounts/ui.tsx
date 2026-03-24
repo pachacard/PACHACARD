@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { Business, Discount } from "@prisma/client";
 
@@ -25,6 +27,7 @@ function translateStatus(status: string) {
 }
 
 export default function DiscountForm({ item, businesses, categories }: Props) {
+  const router = useRouter();
   const isEdit = !!item?.id;
   const initialTier: Tier = item?.tierBasic ? "BASIC" : item?.tierNormal ? "NORMAL" : item?.tierPremium ? "PREMIUM" : "BASIC";
 
@@ -69,7 +72,7 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
     });
     if (r.ok) {
       if (isEdit) alert("Cambios guardados.");
-      else location.href = "/admin/discounts";
+      else router.push("/admin/discounts");
     } else {
       const text = await r.text().catch(() => "");
       alert(`Error al guardar: ${r.status} ${text}`);
@@ -80,12 +83,12 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
     if (!isEdit) return;
     if (!confirm("¿Eliminar descuento?")) return;
     const r = await fetch(`/api/admin/discounts/${item!.id}`, { method: "DELETE" });
-    if (r.ok) location.href = "/admin/discounts";
+    if (r.ok) router.push("/admin/discounts");
   }
 
   function duplicateAsNew() {
     if (!isEdit || !item?.id) return;
-    location.href = `/admin/discounts/new?from=${item.id}`;
+    router.push(`/admin/discounts/new?from=${item.id}`);
   }
 
   return (
@@ -95,7 +98,7 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
           <div className="space-y-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">Descuentos</div>
+                <div className="admin-kicker">Descuentos</div>
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                   {isEdit ? "Editar descuento" : "Nuevo descuento"}
                 </h1>
@@ -212,8 +215,8 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
                   return (
                     <label
                       key={c.id}
-                      className={`flex items-center gap-3 rounded-2xl border p-3 text-sm transition ${
-                        checked ? "border-[var(--brand)]/30 bg-[var(--brand)]/5" : "border-slate-200 bg-white"
+                      className={`admin-selectable flex items-center gap-3 ${
+                        checked ? "admin-selectable-active" : "border-slate-200 bg-white"
                       }`}
                     >
                       <input type="checkbox" checked={checked} onChange={() => toggleCat(c.id)} />
@@ -235,7 +238,7 @@ export default function DiscountForm({ item, businesses, categories }: Props) {
                   <button type="button" className="btn btn-danger" onClick={removeItem}>Eliminar</button>
                 </>
               )}
-              <a href="/admin/discounts" className="btn btn-outline">Volver</a>
+              <Link href="/admin/discounts" className="btn btn-outline">Volver</Link>
             </div>
           </div>
         </div>

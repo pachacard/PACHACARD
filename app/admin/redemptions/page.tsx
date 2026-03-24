@@ -13,6 +13,8 @@ type Filters = {
 
 export default function Redemptions() {
   const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [f, setF] = useState<Filters>({
     from: "",
     to: "",
@@ -22,13 +24,26 @@ export default function Redemptions() {
   });
 
   async function load() {
+    setLoading(true);
+    setError("");
     const params = new URLSearchParams();
     Object.entries(f).forEach(([k, v]) => {
       if (v) params.set(k, String(v));
     });
-    const r = await fetch(`/api/admin/redemptions?${params.toString()}`);
-    const j = await r.json();
-    if (j.ok) setItems(j.items);
+    try {
+      const r = await fetch(`/api/admin/redemptions?${params.toString()}`);
+      const j = await r.json();
+      if (j.ok) setItems(j.items);
+      else {
+        setItems([]);
+        setError("No se pudieron cargar los canjes.");
+      }
+    } catch {
+      setItems([]);
+      setError("No se pudieron cargar los canjes.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -50,9 +65,7 @@ export default function Redemptions() {
         <section className="admin-panel">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
-                Modulo
-              </div>
+              <div className="admin-kicker">Modulo</div>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                 Historial de canjes
               </h1>
@@ -131,7 +144,7 @@ export default function Redemptions() {
             <div key={r.id} className="admin-table-row">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex gap-4">
-                  <div className="rounded-2xl bg-[var(--brand)]/8 p-3 text-[var(--brand)]">
+                  <div className="admin-icon-badge">
                     <Ticket className="h-5 w-5" />
                   </div>
                   <div>
@@ -154,7 +167,15 @@ export default function Redemptions() {
             </div>
           ))}
 
-          {items.length === 0 && (
+          {loading && (
+            <div className="admin-panel text-sm text-slate-500">Cargando canjes...</div>
+          )}
+
+          {!loading && error && (
+            <div className="admin-panel text-sm text-red-600">{error}</div>
+          )}
+
+          {!loading && !error && items.length === 0 && (
             <div className="admin-panel text-sm text-slate-500">No hay registros para mostrar.</div>
           )}
         </section>

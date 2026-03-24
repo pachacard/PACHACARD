@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
   { href: "/admin/discounts", label: "Descuentos", icon: Gift },
   { href: "/admin/users", label: "Usuarios", icon: Users },
   { href: "/admin/redemptions", label: "Canjes", icon: Ticket },
-  { href: "/admin/audit", label: "Auditoria", icon: ShieldCheck },
+  { href: "/admin/audit", label: "Auditoría", icon: ShieldCheck },
 ];
 
 export default function AdminHeader() {
@@ -64,7 +64,7 @@ export default function AdminHeader() {
               PACHACARD
             </div>
             <div className="text-base font-semibold sm:text-lg">
-              Panel de administracion
+              Panel de administración
             </div>
           </div>
         </Link>
@@ -111,7 +111,7 @@ export default function AdminHeader() {
       {open && (
         <div
           id="admin-mobile-menu"
-          className="border-t border-white/10 bg-[var(--brand)]/96 backdrop-blur lg:hidden"
+          className="admin-mobile-surface border-t border-white/10 backdrop-blur lg:hidden"
         >
           <div className="container-app flex flex-col gap-2 py-3">
             {navItems.map(({ href, label, icon: Icon }) => {

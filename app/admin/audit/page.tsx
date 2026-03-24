@@ -35,13 +35,11 @@ export default async function AuditPage() {
       <div className="container-app space-y-6 py-6 md:py-8">
         <section className="admin-panel">
           <div className="flex items-start gap-4">
-            <div className="rounded-2xl bg-[var(--brand)]/8 p-3 text-[var(--brand)]">
+            <div className="admin-icon-badge">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
-                Modulo
-              </div>
+              <div className="admin-kicker">Modulo</div>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                 Auditoria del sistema
               </h1>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Gift, Plus } from "lucide-react";
 
@@ -26,9 +27,7 @@ export default async function AdminDiscountsList() {
         <section className="admin-panel">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
-                Modulo
-              </div>
+              <div className="admin-kicker">Modulo</div>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                 Descuentos y beneficios
               </h1>
@@ -36,18 +35,18 @@ export default async function AdminDiscountsList() {
                 Revisa las campañas vigentes, su negocio asociado y el estado de publicacion.
               </p>
             </div>
-            <a className="btn btn-primary gap-2" href="/admin/discounts/new">
+            <Link className="btn btn-primary gap-2" href="/admin/discounts/new">
               <Plus className="h-4 w-4" />
               Nuevo descuento
-            </a>
+            </Link>
           </div>
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {items.map((d) => (
-            <a key={d.id} className="admin-list-card" href={`/admin/discounts/${d.id}`}>
+            <Link key={d.id} className="admin-list-card" href={`/admin/discounts/${d.id}`}>
               <div className="flex items-start justify-between gap-4">
-                <div className="rounded-2xl bg-[var(--brand)]/8 p-3 text-[var(--brand)]">
+                <div className="admin-icon-badge">
                   <Gift className="h-5 w-5" />
                 </div>
                 <span className="admin-chip">{translateStatus(d.status)}</span>
@@ -61,7 +60,7 @@ export default async function AdminDiscountsList() {
               <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
                 {d.business?.name ?? "Sin negocio asignado"}
               </div>
-            </a>
+            </Link>
           ))}
         </section>
       </div>
