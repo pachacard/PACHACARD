@@ -60,7 +60,7 @@ function StatCard({
   icon: ComponentType<{ className?: string }>;
 }) {
   return (
-    <Link href={href} className="admin-stat-card block">
+    <Link href={href} className="group admin-stat-card block">
       <div className="relative z-10 flex items-start justify-between gap-4">
         <div>
           <div className="text-sm font-medium text-slate-500">{label}</div>

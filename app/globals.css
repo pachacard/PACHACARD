@@ -345,7 +345,7 @@ textarea.input {
 }
 
 .admin-stat-card {
-  @apply group relative overflow-hidden rounded-[22px] border border-white/80 bg-white/92 p-5 shadow-[0_20px_45px_-32px_rgba(15,23,42,0.38)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_26px_55px_-34px_rgba(15,23,42,0.45)];
+  @apply relative overflow-hidden rounded-[22px] border border-white/80 bg-white/92 p-5 shadow-[0_20px_45px_-32px_rgba(15,23,42,0.38)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_26px_55px_-34px_rgba(15,23,42,0.45)];
 }
 
 .admin-stat-card::before {
