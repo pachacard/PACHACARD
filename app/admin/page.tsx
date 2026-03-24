@@ -39,7 +39,7 @@ const sections = [
     icon: Ticket,
   },
   {
-    label: "Auditoria",
+    label: "Auditoría",
     href: "/admin/audit",
     description: "Consulta eventos clave y trazabilidad del sistema.",
     icon: ShieldCheck,
@@ -74,7 +74,7 @@ function StatCard({
       </div>
       <p className="relative z-10 mt-4 text-sm leading-6 text-slate-600">{description}</p>
       <div className="relative z-10 mt-5 inline-flex items-center gap-2 text-sm font-medium text-[var(--brand)]">
-        Ver modulo
+        Ver módulo
         <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
       </div>
     </Link>
@@ -108,14 +108,13 @@ export default async function AdminHome() {
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
               <div className="text-sm font-semibold uppercase tracking-[0.28em] text-white/70">
-                Administracion
+                Administración
               </div>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                Un panel mas claro para operar Pachacard.
+                Panel de administración
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-6 text-white/80 md:text-base">
-                Visualiza el estado general, entra rapido a cada modulo y manten una
-                administracion mas ordenada sin tocar la experiencia del cliente.
+                Resumen general del sistema.
               </p>
             </div>
 
@@ -151,10 +150,8 @@ export default async function AdminHome() {
         <section className="admin-panel">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-slate-950">Accesos directos</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Entra a las secciones clave del panel con una navegacion mas simple.
-              </p>
+              <h2 className="text-xl font-semibold text-slate-950">Módulos del panel</h2>
+              <p className="mt-1 text-sm text-slate-600">Acceso rápido a cada sección.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {sections.map((item) => (
