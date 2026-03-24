@@ -22,9 +22,5 @@ export default async function UserEditPage({
   });
   if (!item) notFound();
 
-  return (
-    <div className="container-app py-6 max-w-xl">
-      <UserForm item={item} />
-    </div>
-  );
+  return <UserForm item={item} />;
 }

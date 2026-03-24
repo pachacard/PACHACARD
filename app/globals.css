@@ -311,6 +311,64 @@ textarea.input {
 }
 
 /* =========================
+   Admin UI
+   ========================= */
+
+.admin-shell {
+  min-height: calc(100vh - 72px);
+  background:
+    radial-gradient(circle at top left, rgba(143, 27, 27, 0.1), transparent 28%),
+    linear-gradient(180deg, #fff8f7 0%, #f6f7fb 28%, #f4f6fa 100%);
+}
+
+.admin-hero {
+  background:
+    linear-gradient(135deg, rgba(111, 20, 20, 0.96), rgba(143, 27, 27, 0.92)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+  color: white;
+  @apply relative overflow-hidden rounded-[28px] border border-white/10 p-6 shadow-[0_24px_60px_-28px_rgba(111,20,20,0.55)] md:p-8;
+}
+
+.admin-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -8% -40% auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  filter: blur(6px);
+}
+
+.admin-panel {
+  @apply rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_45px_-30px_rgba(15,23,42,0.35)] backdrop-blur sm:p-5;
+}
+
+.admin-stat-card {
+  @apply group relative overflow-hidden rounded-[22px] border border-white/80 bg-white/92 p-5 shadow-[0_20px_45px_-32px_rgba(15,23,42,0.38)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_26px_55px_-34px_rgba(15,23,42,0.45)];
+}
+
+.admin-stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(143, 27, 27, 0.06), transparent 55%);
+  pointer-events: none;
+}
+
+.admin-list-card {
+  @apply rounded-[22px] border border-white/80 bg-white/92 p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.45)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-32px_rgba(15,23,42,0.5)] sm:p-5;
+}
+
+.admin-chip {
+  @apply inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/10 bg-[var(--brand)]/5 px-3 py-1 text-xs font-medium text-[var(--brand)];
+}
+
+.admin-table-row {
+  @apply rounded-2xl border border-slate-200/80 bg-white/75 p-4 transition hover:border-[var(--brand)]/20 hover:bg-white;
+}
+
+/* =========================
    Scroll helpers
    ========================= */
 

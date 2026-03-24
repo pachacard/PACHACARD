@@ -1,109 +1,147 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { signOut } from "next-auth/react";
+import {
+  Gift,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  ShieldCheck,
+  Store,
+  Ticket,
+  Users,
+  X,
+} from "lucide-react";
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+};
+
+const navItems: NavItem[] = [
+  { href: "/admin", label: "Resumen", icon: LayoutDashboard },
+  { href: "/admin/businesses", label: "Negocios", icon: Store },
+  { href: "/admin/discounts", label: "Descuentos", icon: Gift },
+  { href: "/admin/users", label: "Usuarios", icon: Users },
+  { href: "/admin/redemptions", label: "Canjes", icon: Ticket },
+  { href: "/admin/audit", label: "Auditoria", icon: ShieldCheck },
+];
 
 export default function AdminHeader() {
   const pathname = usePathname() || "/";
   const [open, setOpen] = useState(false);
 
   const isActive = (href: string) => {
-    if (href === "/admin") {
-      // Resumen solo activo en /admin exactamente
-      return pathname === "/admin";
-    }
-    // Para las demás secciones sí vale el prefijo
-    return pathname === href || pathname.startsWith(href + "/");
-  };
-
-  const link = (href: string, label: string) => {
-    const active = isActive(href);
-    return (
-      <a
-        href={href}
-        className={`px-3 py-2 rounded-md text-sm transition ${
-          active
-            ? "bg-white/20 text-white font-semibold"
-            : "text-white/90 hover:bg-white/10 hover:text-white"
-        }`}
-        onClick={() => setOpen(false)}
-      >
-        {label}
-      </a>
-    );
+    if (href === "/admin") return pathname === "/admin";
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   async function doSignOut() {
-    // Prepara el CSRF cookie para evitar ?error=MissingCSRF
     await fetch("/api/auth/csrf", { cache: "no-store" }).catch(() => {});
     await signOut({ callbackUrl: "/login" });
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-[var(--brand)] text-white shadow-sm">
-      <div className="container-app h-14 flex items-center justify-between gap-4">
-        {/* Marca */}
-        <a href="/admin" className="flex items-center gap-3">
-          <img
-            src="/pachacard.png"
-            alt=""
-            className="hidden sm:block h-7 w-auto"
-            onError={(e) => ((e.currentTarget.style.display = "none"))}
-          />
-          <div className="leading-none">
-            <div className="font-semibold tracking-wide">PACHACARD</div>
-            <div className="text-[11px] opacity-80">Panel de Administración</div>
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[var(--brand)] text-white shadow-[0_14px_40px_-24px_rgba(0,0,0,0.55)]">
+      <div className="container-app flex min-h-[72px] items-center justify-between gap-4 py-3">
+        <Link href="/admin" className="flex items-center gap-3" onClick={() => setOpen(false)}>
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-inner shadow-white/10 backdrop-blur">
+            <img
+              src="/pachacard.png"
+              alt="Pachacard"
+              className="h-7 w-auto"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
-        </a>
+          <div className="leading-tight">
+            <div className="text-sm font-semibold tracking-[0.18em] text-white/75">
+              PACHACARD
+            </div>
+            <div className="text-base font-semibold sm:text-lg">
+              Panel de administracion
+            </div>
+          </div>
+        </Link>
 
-        {/* Navegación desktop */}
-        <nav className="hidden md:flex items-center gap-1">
-          {link("/admin", "Resumen")}
-          {link("/admin/businesses", "Negocios")}
-          {link("/admin/discounts", "Descuentos")}
-          {link("/admin/users", "Usuarios")}
-          {link("/admin/redemptions", "Canjes")}
+        <nav className="hidden items-center gap-2 lg:flex">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const active = isActive(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition ${
+                  active
+                    ? "bg-white text-[var(--brand)] shadow-sm"
+                    : "text-white/88 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+
           <button
             onClick={doSignOut}
-            className="ml-1 px-3 py-2 rounded-md text-sm text-white/90 hover:bg-white/10 hover:text-white transition"
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/16"
           >
-            Salir
+            <LogOut className="h-4 w-4" />
+            <span>Salir</span>
           </button>
         </nav>
 
-        {/* Botón mobile */}
         <button
-          className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md hover:bg-white/10"
-          aria-label="Abrir menú"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 transition hover:bg-white/16 lg:hidden"
+          aria-label={open ? "Cerrar menu" : "Abrir menu"}
           aria-expanded={open}
           aria-controls="admin-mobile-menu"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen((value) => !value)}
         >
-          ☰
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
-      {/* Drawer mobile */}
       {open && (
         <div
           id="admin-mobile-menu"
-          className="md:hidden border-t border-white/10 bg-[var(--brand)]/95 backdrop-blur"
+          className="border-t border-white/10 bg-[var(--brand)]/96 backdrop-blur lg:hidden"
         >
-          <div className="container-app py-2 flex flex-col">
-            {link("/admin", "Resumen")}
-            {link("/admin/businesses", "Negocios")}
-            {link("/admin/discounts", "Descuentos")}
-            {link("/admin/users", "Usuarios")}
-            {link("/admin/redemptions", "Canjes")}
+          <div className="container-app flex flex-col gap-2 py-3">
+            {navItems.map(({ href, label, icon: Icon }) => {
+              const active = isActive(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  className={`inline-flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition ${
+                    active
+                      ? "bg-white text-[var(--brand)]"
+                      : "text-white/92 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{label}</span>
+                </Link>
+              );
+            })}
+
             <button
               onClick={() => {
                 setOpen(false);
                 doSignOut();
               }}
-              className="px-3 py-2 rounded-md text-sm text-white/90 hover:bg-white/10 hover:text-white transition text-left"
+              className="inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-left text-sm text-white transition hover:bg-white/16"
             >
-              Salir
+              <LogOut className="h-4 w-4" />
+              <span>Salir</span>
             </button>
           </div>
         </div>

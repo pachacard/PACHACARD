@@ -1,7 +1,18 @@
-// app/admin/discounts/page.tsx
 import { prisma } from "@/lib/prisma";
+import { Gift, Plus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+function translateStatus(status: string) {
+  switch (status) {
+    case "PUBLISHED":
+      return "Publicado";
+    case "ARCHIVED":
+      return "Archivado";
+    default:
+      return "Borrador";
+  }
+}
 
 export default async function AdminDiscountsList() {
   const items = await prisma.discount.findMany({
@@ -10,32 +21,49 @@ export default async function AdminDiscountsList() {
   });
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Descuentos</h2>
-        <a className="btn btn-primary" href="/admin/discounts/new">
-          Nuevo
-        </a>
-      </div>
-
-      <div className="grid gap-3">
-        {items.map((d) => (
-          <a
-            key={d.id}
-            className="card hover:shadow-lg transition"
-            href={`/admin/discounts/${d.id}`}
-          >
-            <div className="card-body flex items-center justify-between">
-              <div>
-                <div className="font-semibold">{d.title}</div>
-                <div className="text-xs text-slate-500">
-                  {d.code} · {d.business?.name ?? "—"}
-                </div>
+    <div className="admin-shell">
+      <div className="container-app space-y-6 py-6 md:py-8">
+        <section className="admin-panel">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
+                Modulo
               </div>
-              <span className="badge">{d.status}</span>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+                Descuentos y beneficios
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Revisa las campañas vigentes, su negocio asociado y el estado de publicacion.
+              </p>
             </div>
-          </a>
-        ))}
+            <a className="btn btn-primary gap-2" href="/admin/discounts/new">
+              <Plus className="h-4 w-4" />
+              Nuevo descuento
+            </a>
+          </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {items.map((d) => (
+            <a key={d.id} className="admin-list-card" href={`/admin/discounts/${d.id}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="rounded-2xl bg-[var(--brand)]/8 p-3 text-[var(--brand)]">
+                  <Gift className="h-5 w-5" />
+                </div>
+                <span className="admin-chip">{translateStatus(d.status)}</span>
+              </div>
+
+              <div className="mt-5">
+                <div className="text-lg font-semibold text-slate-950">{d.title}</div>
+                <div className="mt-1 text-sm text-slate-500">Codigo: {d.code}</div>
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                {d.business?.name ?? "Sin negocio asignado"}
+              </div>
+            </a>
+          ))}
+        </section>
       </div>
     </div>
   );

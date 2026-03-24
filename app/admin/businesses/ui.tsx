@@ -1,9 +1,7 @@
-// app/admin/businesses/ui.tsx
 "use client";
 
 import { useRef, useState } from "react";
 
-// Exportamos el tipo para poder usarlo en la página (y en otras partes si quieres)
 export type Biz = {
   id?: string;
   code: string;
@@ -12,8 +10,8 @@ export type Biz = {
   address?: string | null;
   contact?: string | null;
   status: "ACTIVE" | "INACTIVE";
-  imageUrl?: string | null;      // URL remota o data URL
-  googleMapsUrl?: string | null; // 👈 NUEVO: URL a Google Maps
+  imageUrl?: string | null;
+  googleMapsUrl?: string | null;
 };
 
 export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
@@ -24,21 +22,18 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
     ruc: item?.ruc ?? "",
     address: item?.address ?? "",
     contact: item?.contact ?? "",
-    status: (item?.status as any) ?? "ACTIVE",
+    status: (item?.status as Biz["status"]) ?? "ACTIVE",
     imageUrl: item?.imageUrl ?? "",
-    googleMapsUrl: item?.googleMapsUrl ?? "", // 👈 inicializamos
+    googleMapsUrl: item?.googleMapsUrl ?? "",
   });
-
   const [saving, setSaving] = useState(false);
   const [readingFile, setReadingFile] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   function sanitizeCode(v: string) {
-    // Solo mayúsculas, sin espacios
     return v.replace(/\s+/g, "").toUpperCase();
   }
 
-  /** Lee un archivo local y lo convierte a data URL (base64). */
   function fileToDataUrl(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -51,27 +46,20 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith("image/")) {
-      alert("Solo se permiten imágenes.");
+      alert("Solo se permiten imagenes.");
       e.currentTarget.value = "";
       return;
     }
-
-    // Límite de tamaño razonable para no inflar la BD
-    const MAX_BYTES = 450 * 1024; // ~450KB
-    if (file.size > MAX_BYTES) {
-      alert(
-        "La imagen es muy grande. Usa una de menor tamaño (~450KB máx.) o sube la imagen a un hosting (Cloudinary/S3) y pega la URL."
-      );
+    if (file.size > 450 * 1024) {
+      alert("La imagen es muy grande. Usa un archivo mas ligero o pega una URL remota.");
       e.currentTarget.value = "";
       return;
     }
-
     setReadingFile(true);
     try {
       const dataUrl = await fileToDataUrl(file);
-      setF((p) => ({ ...p, imageUrl: dataUrl }));
+      setF((prev) => ({ ...prev, imageUrl: dataUrl }));
     } catch (err: any) {
       alert(err?.message || "No se pudo procesar la imagen");
     } finally {
@@ -86,14 +74,11 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
       const isNew = !f.id;
       const url = isNew ? "/api/admin/businesses" : `/api/admin/businesses/${f.id}`;
       const method = isNew ? "POST" : "PUT";
-
-      // Validaciones rápidas
       if (!f.code.trim() || !f.name.trim()) {
-        alert("Código y Nombre son obligatorios.");
+        alert("El codigo y el nombre son obligatorios.");
         setSaving(false);
         return;
       }
-
       const body = {
         code: sanitizeCode(f.code),
         name: f.name.trim(),
@@ -101,23 +86,16 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
         address: f.address?.trim() || null,
         contact: f.contact?.trim() || null,
         status: f.status ?? "ACTIVE",
-        // CLAVE: guardamos directamente el string (URL o data:)
         imageUrl: (f.imageUrl ?? "").toString().trim() || null,
-        // NUEVO: Google Maps URL (o null si está vacío)
         googleMapsUrl: f.googleMapsUrl?.trim() || null,
       };
-
       const r = await fetch(url, {
         method,
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-
       const json = await r.json().catch(() => ({} as any));
-      if (!r.ok || json?.ok === false) {
-        throw new Error(json?.message || "Error al guardar");
-      }
-
+      if (!r.ok || json?.ok === false) throw new Error(json?.message || "Error al guardar");
       location.href = "/admin/businesses";
     } catch (err: any) {
       alert(err?.message || "Error al guardar");
@@ -127,194 +105,143 @@ export default function BusinessForm({ item }: { item?: Partial<Biz> | null }) {
   }
 
   return (
-    <div className="max-w-3xl">
-      <div className="card">
-        {/* ÚNICO botón guardar abajo (nada en el header) */}
-        <form
-          className="card-body space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!saving) save();
-          }}
-        >
-          <h2 className="card-title">
-            {f.id ? "Editar negocio" : "Nuevo negocio"}
-          </h2>
-
-          {/* Código + Nombre */}
-          <div className="form-grid">
+    <div className="admin-shell">
+      <div className="container-app py-6 md:py-8">
+        <div className="mx-auto max-w-4xl admin-panel">
+          <form
+            className="space-y-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!saving) save();
+            }}
+          >
             <div>
-              <label className="label">Código (único)</label>
-              <input
-                className="input"
-                placeholder="EJ: CAFE"
-                value={f.code}
-                onChange={(e) => setF({ ...f, code: e.target.value })}
-                onBlur={(e) =>
-                  setF({ ...f, code: sanitizeCode(e.target.value) })
-                }
-                required
-              />
-              <p className="help">
-                Usado en canje. Solo mayúsculas, sin espacios.
+              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
+                Negocios
+              </div>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+                {f.id ? "Editar negocio" : "Nuevo negocio"}
+              </h1>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Completa los datos principales, la ubicacion y la imagen visible en el portal.
               </p>
             </div>
-            <div>
-              <label className="label">Nombre</label>
-              <input
-                className="input"
-                placeholder="Café Central"
-                value={f.name}
-                onChange={(e) => setF({ ...f, name: e.target.value })}
-                required
-              />
-            </div>
-          </div>
 
-          {/* RUC + Contacto */}
-          <div className="form-grid">
-            <div>
-              <label className="label">RUC</label>
-              <input
-                className="input"
-                placeholder="10012345678"
-                value={f.ruc ?? ""}
-                onChange={(e) => setF({ ...f, ruc: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="label">Contacto</label>
-              <input
-                className="input"
-                placeholder="+51 999 888 777"
-                value={f.contact ?? ""}
-                onChange={(e) => setF({ ...f, contact: e.target.value })}
-              />
-            </div>
-          </div>
-
-          {/* Ubicación: Dirección + Google Maps URL */}
-          <div className="form-grid">
-            <div>
-              <label className="label">Dirección</label>
-              <input
-                className="input"
-                placeholder="Av. Principal 123 (opcional)"
-                value={f.address ?? ""}
-                onChange={(e) => setF({ ...f, address: e.target.value })}
-              />
-              <p className="help">
-                Se muestra de referencia en el detalle del negocio.
-              </p>
-            </div>
-            <div>
-              <label className="label">Google Maps URL</label>
-              <input
-                className="input"
-                placeholder="https://maps.app.goo.gl/..."
-                value={f.googleMapsUrl ?? ""}
-                onChange={(e) => setF({ ...f, googleMapsUrl: e.target.value })}
-              />
-              <p className="help">
-                Pega aquí el enlace de Google Maps del local. Se usa para el
-                botón <strong>“Ver en Google Maps”</strong> en el portal.
-              </p>
-            </div>
-          </div>
-
-          {/* Logo: URL + carga local a data URL */}
-          <div className="form-grid">
-            <div>
-              <label className="label">Imagen del negocio</label>
-              <div className="space-y-2">
+            <div className="form-grid">
+              <div>
+                <label className="label">Codigo unico</label>
                 <input
-                  className="input w-full"
-                  placeholder="Pega aquí una URL (Cloudinary/S3/https...) o usa 'Cargar archivo' para convertir a data URL"
-                  value={f.imageUrl ?? ""}
-                  onChange={(e) => setF({ ...f, imageUrl: e.target.value })}
+                  className="input"
+                  placeholder="EJ: CAFE"
+                  value={f.code}
+                  onChange={(e) => setF({ ...f, code: e.target.value })}
+                  onBlur={(e) => setF({ ...f, code: sanitizeCode(e.target.value) })}
+                  required
                 />
-
-                <div className="flex items-center gap-3">
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    disabled={readingFile}
-                  />
-                  {readingFile && (
-                    <span className="text-xs text-slate-500">
-                      Procesando imagen…
-                    </span>
-                  )}
-                </div>
-
-                <p className="help">
-                  En Vercel no existe /uploads de escritura. Pega una URL remota
-                  o carga un archivo (se convierte a <code>data:</code> URL y se
-                  guarda inline). Mantén las imágenes ligeras (&lt; 450KB).
-                </p>
+              </div>
+              <div>
+                <label className="label">Nombre comercial</label>
+                <input
+                  className="input"
+                  placeholder="Cafe Central"
+                  value={f.name}
+                  onChange={(e) => setF({ ...f, name: e.target.value })}
+                  required
+                />
               </div>
             </div>
 
-            <div>
-              <label className="label">Previsualización</label>
-              {f.imageUrl ? (
-                <>
-                  <img
-                    src={f.imageUrl}
-                    alt="preview"
-                    className="h-20 w-20 rounded-xl object-cover border bg-white"
-                    onError={(e) =>
-                      (e.currentTarget.style.opacity = "0.3")
-                    }
+            <div className="form-grid">
+              <div>
+                <label className="label">RUC</label>
+                <input className="input" value={f.ruc ?? ""} onChange={(e) => setF({ ...f, ruc: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">Contacto</label>
+                <input className="input" value={f.contact ?? ""} onChange={(e) => setF({ ...f, contact: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="form-grid">
+              <div>
+                <label className="label">Direccion</label>
+                <input className="input" value={f.address ?? ""} onChange={(e) => setF({ ...f, address: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">Enlace de Google Maps</label>
+                <input
+                  className="input"
+                  placeholder="https://maps.app.goo.gl/..."
+                  value={f.googleMapsUrl ?? ""}
+                  onChange={(e) => setF({ ...f, googleMapsUrl: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-[1.4fr_.8fr]">
+              <div>
+                <label className="label">Imagen del negocio</label>
+                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                  <input
+                    className="input w-full bg-white"
+                    placeholder="Pega una URL remota o carga un archivo"
+                    value={f.imageUrl ?? ""}
+                    onChange={(e) => setF({ ...f, imageUrl: e.target.value })}
                   />
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      onClick={() => setF({ ...f, imageUrl: "" })}
-                    >
-                      Quitar
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="h-20 w-20 rounded-xl bg-slate-200 grid place-content-center text-xs text-slate-500">
-                  sin img
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handleFileSelect} disabled={readingFile} />
+                  <p className="help">Tambien puedes cargar una imagen liviana para guardarla inline.</p>
+                  {readingFile && <div className="text-xs text-slate-500">Procesando imagen...</div>}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Estado */}
-          <div className="form-grid">
-            <div>
-              <label className="label">Estado</label>
-              <select
-                className="select"
-                value={f.status}
-                onChange={(e) =>
-                  setF({ ...f, status: e.target.value as Biz["status"] })
-                }
-              >
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="INACTIVE">INACTIVE</option>
-              </select>
+              <div>
+                <label className="label">Previsualizacion</label>
+                <div className="flex min-h-[180px] items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white">
+                  {f.imageUrl ? (
+                    <div className="space-y-3 text-center">
+                      <img
+                        src={f.imageUrl}
+                        alt="Vista previa"
+                        className="mx-auto h-24 w-24 rounded-2xl border bg-white object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.opacity = "0.3";
+                        }}
+                      />
+                      <button type="button" className="btn btn-outline" onClick={() => setF({ ...f, imageUrl: "" })}>
+                        Quitar imagen
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-500">Sin imagen cargada</div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Único botón Guardar */}
-          <div className="pt-2">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={saving || readingFile}
-            >
-              {saving ? "Guardando..." : "Guardar"}
-            </button>
-          </div>
-        </form>
+            <div className="form-grid">
+              <div>
+                <label className="label">Estado</label>
+                <select
+                  className="select"
+                  value={f.status}
+                  onChange={(e) => setF({ ...f, status: e.target.value as Biz["status"] })}
+                >
+                  <option value="ACTIVE">Activo</option>
+                  <option value="INACTIVE">Inactivo</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button type="submit" className="btn btn-primary" disabled={saving || readingFile}>
+                {saving ? "Guardando..." : "Guardar negocio"}
+              </button>
+              <a href="/admin/businesses" className="btn btn-outline">
+                Volver
+              </a>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

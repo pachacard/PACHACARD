@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminHeader from "@/components/pachacard/AdminHeader";
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Admin · PACHACARD" };
+export const metadata = { title: "Administracion · PACHACARD" };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -12,7 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <>
       <AdminHeader />
-      <main className="container-app py-6">{children}</main>
+      <main>{children}</main>
     </>
   );
 }

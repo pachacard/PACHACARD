@@ -1,11 +1,11 @@
-// app/admin/users/page.tsx
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { Plus, Search, SlidersHorizontal, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-type Search = {
+type SearchParams = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
 
@@ -13,29 +13,45 @@ function one(v?: string | string[]) {
   return Array.isArray(v) ? v[0] : v;
 }
 
-export default async function AdminUsersPage({ searchParams }: Search) {
-  // ✅ Solo ADMIN (usa session.user.role)
+function translateRole(role: string) {
+  return role === "ADMIN" ? "Administrador" : "Usuario";
+}
+
+function translateStatus(status: string) {
+  return status === "ACTIVE" ? "Activo" : "Inactivo";
+}
+
+function translateTier(tier: string) {
+  switch (tier) {
+    case "PREMIUM":
+      return "Premium";
+    case "NORMAL":
+      return "Normal";
+    default:
+      return "Basico";
+  }
+}
+
+export default async function AdminUsersPage({ searchParams }: SearchParams) {
   const session = await auth();
   if (!session?.user) redirect("/login");
   if (session.user.role !== "ADMIN") redirect("/app");
 
-  // Filtros
   const q = (one(searchParams?.q) || "").trim();
   const tier = one(searchParams?.tier) || "";
   const status = one(searchParams?.status) || "";
   const role = one(searchParams?.role) || "";
 
-  // Where dinámico
   const where: any = {};
   if (q) {
     where.OR = [
-      { name:  { contains: q, mode: "insensitive" } },
+      { name: { contains: q, mode: "insensitive" } },
       { email: { contains: q, mode: "insensitive" } },
     ];
   }
-  if (tier)   where.tier   = tier;
+  if (tier) where.tier = tier;
   if (status) where.status = status;
-  if (role)   where.role   = role;
+  if (role) where.role = role;
 
   const items = await prisma.user.findMany({
     where,
@@ -52,87 +68,105 @@ export default async function AdminUsersPage({ searchParams }: Search) {
   });
 
   return (
-    <div className="container-app py-6 space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Usuarios</h1>
-        <a className="btn btn-primary" href="/admin/users/new">
-          Nuevo usuario
-        </a>
-      </div>
-
-      {/* Filtros */}
-      <div className="card">
-        <form className="card-body grid md:grid-cols-5 gap-3" method="get">
-          <div className="md:col-span-2">
-            <label className="label">Buscar</label>
-            <input
-              name="q"
-              className="input"
-              placeholder="Nombre o email"
-              defaultValue={q}
-            />
-          </div>
-          <div>
-            <label className="label">Tier</label>
-            <select name="tier" className="select" defaultValue={tier}>
-              <option value="">Todos</option>
-              <option value="BASIC">BASIC</option>
-              <option value="NORMAL">NORMAL</option>
-              <option value="PREMIUM">PREMIUM</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Estado</label>
-            <select name="status" className="select" defaultValue={status}>
-              <option value="">Todos</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Rol</label>
-            <select name="role" className="select" defaultValue={role}>
-              <option value="">Todos</option>
-              <option value="USER">USER</option>
-              <option value="ADMIN">ADMIN</option>
-            </select>
-          </div>
-          <div className="md:col-span-5">
-            <button className="btn btn-primary" type="submit">
-              Aplicar filtros
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Lista */}
-      <div className="grid gap-3">
-        {items.map((u) => (
-          <a
-            key={u.id}
-            href={`/admin/users/${u.id}`}
-            className="card hover:shadow-lg transition"
-          >
-            <div className="card-body flex items-center justify-between">
-              <div>
-                <div className="font-medium">
-                  {u.name} <span className="text-slate-500">({u.email})</span>
-                </div>
-                <div className="text-xs text-slate-500">
-                  Alta: {new Date(u.createdAt).toLocaleString()}
-                </div>
+    <div className="admin-shell">
+      <div className="container-app space-y-6 py-6 md:py-8">
+        <section className="admin-panel">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]/70">
+                Modulo
               </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="px-2 py-0.5 rounded-full border">{u.tier}</span>
-                <span className="px-2 py-0.5 rounded-full border">{u.role}</span>
-                <span className="px-2 py-0.5 rounded-full border">{u.status}</span>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+                Usuarios registrados
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Filtra por nivel, rol o estado y gestiona accesos del panel y del portal.
+              </p>
+            </div>
+            <a className="btn btn-primary gap-2" href="/admin/users/new">
+              <Plus className="h-4 w-4" />
+              Nuevo usuario
+            </a>
+          </div>
+        </section>
+
+        <section className="admin-panel">
+          <form className="grid gap-4 md:grid-cols-5" method="get">
+            <div className="md:col-span-2">
+              <label className="label">Buscar</label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  name="q"
+                  className="input pl-10"
+                  placeholder="Nombre o correo"
+                  defaultValue={q}
+                />
               </div>
             </div>
-          </a>
-        ))}
-        {items.length === 0 && (
-          <div className="text-sm text-slate-500">Sin resultados.</div>
-        )}
+            <div>
+              <label className="label">Nivel</label>
+              <select name="tier" className="select" defaultValue={tier}>
+                <option value="">Todos</option>
+                <option value="BASIC">Basico</option>
+                <option value="NORMAL">Normal</option>
+                <option value="PREMIUM">Premium</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Estado</label>
+              <select name="status" className="select" defaultValue={status}>
+                <option value="">Todos</option>
+                <option value="ACTIVE">Activo</option>
+                <option value="INACTIVE">Inactivo</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Rol</label>
+              <select name="role" className="select" defaultValue={role}>
+                <option value="">Todos</option>
+                <option value="USER">Usuario</option>
+                <option value="ADMIN">Administrador</option>
+              </select>
+            </div>
+            <div className="md:col-span-5 flex flex-wrap gap-3">
+              <button className="btn btn-primary gap-2" type="submit">
+                <SlidersHorizontal className="h-4 w-4" />
+                Aplicar filtros
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section className="grid gap-3">
+          {items.map((u) => (
+            <a key={u.id} href={`/admin/users/${u.id}`} className="admin-table-row">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="rounded-2xl bg-[var(--brand)]/8 p-3 text-[var(--brand)]">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold text-slate-950">{u.name}</div>
+                    <div className="text-sm text-slate-500">{u.email}</div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      Alta: {new Date(u.createdAt).toLocaleString("es-PE")}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="admin-chip">{translateTier(u.tier)}</span>
+                  <span className="admin-chip">{translateRole(u.role)}</span>
+                  <span className="admin-chip">{translateStatus(u.status)}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+          {items.length === 0 && (
+            <div className="admin-panel text-sm text-slate-500">No se encontraron usuarios.</div>
+          )}
+        </section>
       </div>
     </div>
   );
