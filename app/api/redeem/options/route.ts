@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { verifyQrToken } from "@/lib/token";
 import { prisma } from "@/lib/prisma";
-import { rateLimit } from "@/lib/rateLimit";
+import { limitRedeemRequest } from "@/lib/security/redeemRateLimit";
 
 /**
  * Si está activo, se valida que el token (tv/jti) coincida con user.tokenVersion.
@@ -56,13 +56,18 @@ export async function GET(req: Request) {
   const businessCode = url.searchParams.get("businessCode") || "";
 
   // Anti-abuso básico (reduce spam; no es seguridad fuerte)
-  const key =
-    (req.headers.get("x-forwarded-for") || "ip") +
-    (req.headers.get("user-agent") || "");
-  if (!rateLimit(key)) {
+  const rl = await limitRedeemRequest(req, "redeem-options");
+  if (!rl.success) {
     return NextResponse.json(
       { ok: false, message: "Rate limit excedido" },
-      { status: 429 }
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": String(rl.limit),
+          "X-RateLimit-Remaining": String(rl.remaining),
+          "X-RateLimit-Reset": String(rl.reset),
+        },
+      }
     );
   }
 

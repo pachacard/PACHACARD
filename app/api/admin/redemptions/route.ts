@@ -1,7 +1,7 @@
 // app/api/admin/redemptions/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireFreshAdmin } from "@/lib/security/admin";
 import Papa from "papaparse";
 import type { Redemption, User, Discount, Business, Prisma } from "@prisma/client";
 
@@ -62,8 +62,8 @@ function parseDate(v: string | null): Date | undefined {
  */
 export async function GET(req: NextRequest) {
   // 1) Autorización: solo ADMIN
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const admin = await requireFreshAdmin();
+  if (!admin) {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 

@@ -1,7 +1,7 @@
 // app/api/qr/token/[userId]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireFreshAdmin } from "@/lib/security/admin";
 import { makeCardToken } from "@/lib/token"; 
 
 export const runtime = "nodejs";
@@ -11,8 +11,8 @@ export async function GET(
   _req: Request,
   { params }: { params: { userId: string } }
 ) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const admin = await requireFreshAdmin();
+  if (!admin) {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 
@@ -25,7 +25,7 @@ export async function GET(
     return NextResponse.json({ ok: false, message: "No existe el usuario" }, { status: 404 });
 
   //  usa makeCardToken
-  const token = await makeCardToken(user.id);
+  const token = await makeCardToken(user.id, user.tokenVersion);
 
   return NextResponse.json({ ok: true, token });
 }

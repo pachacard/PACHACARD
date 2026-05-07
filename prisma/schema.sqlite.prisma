@@ -20,6 +20,7 @@ model User {
   status       String       @default("ACTIVE")
   role         String       @default("USER")
   tokenVersion Int          @default(1)
+  sessionVersion Int        @default(1)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -144,4 +145,16 @@ model BusinessCategory {
 
   @@id([businessId, categoryId])
   @@index([categoryId])
+}
+
+model LoginThrottle {
+  id            String    @id @default(cuid())
+  key           String    @unique
+  attempts      Int       @default(0)
+  lockedUntil   DateTime?
+  lastAttemptAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([lockedUntil])
 }

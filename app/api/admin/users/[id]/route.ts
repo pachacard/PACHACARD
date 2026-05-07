@@ -2,8 +2,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { auth } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { requireFreshAdmin } from "@/lib/security/admin";
 
 /**
  * Endpoint admin para gestionar un usuario específico.
@@ -20,8 +20,8 @@ import { writeAuditLog } from "@/lib/audit";
  */
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const admin = await requireFreshAdmin();
+  if (!admin) {
     return NextResponse.json({ ok: false }, { status: 403 });
   }
 
@@ -39,6 +39,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       role: true,
       status: true,
       tokenVersion: true,
+      sessionVersion: true,
     },
   });
 
@@ -60,6 +61,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
   const passwordChanged = typeof b.password === "string" && !!b.password;
   const rotatedQr = !!b.rotateToken;
+  const roleChanged = typeof b.role === "string" && b.role !== before.role;
+  const statusChanged = typeof b.status === "string" && b.status !== before.status;
 
   // Cambio de contraseña (opcional)
   // Guardamos solo hash, nunca password plano
@@ -70,6 +73,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   // Rotar tokenVersion: invalida QRs previos si tu canje lo valida (ENFORCE_TV)
   if (rotatedQr) {
     data.tokenVersion = { increment: 1 };
+  }
+
+  if (passwordChanged || roleChanged || statusChanged) {
+    data.sessionVersion = { increment: 1 };
   }
 
   try {
@@ -85,6 +92,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         role: true,
         status: true,
         tokenVersion: true,
+        sessionVersion: true,
       },
     });
 
@@ -103,8 +111,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 
     await writeAuditLog({
-      actorId: (session.user as any).id ?? null,
-      actorEmail: session.user.email ?? null,
+      actorId: admin.session.user.id ?? null,
+      actorEmail: admin.session.user.email ?? null,
       action,
       module: "USERS",
       entity: "User",
@@ -150,8 +158,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 }
 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const admin = await requireFreshAdmin();
+  if (!admin) {
     return NextResponse.json({ ok: false }, { status: 403 });
   }
 
@@ -166,6 +174,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       role: true,
       status: true,
       tokenVersion: true,
+      sessionVersion: true,
     },
   });
 
@@ -177,8 +186,8 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     await prisma.user.delete({ where: { id: params.id } });
 
     await writeAuditLog({
-      actorId: (session.user as any).id ?? null,
-      actorEmail: session.user.email ?? null,
+      actorId: admin.session.user.id ?? null,
+      actorEmail: admin.session.user.email ?? null,
       action: "DELETE",
       module: "USERS",
       entity: "User",

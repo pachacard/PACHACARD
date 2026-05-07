@@ -1,7 +1,7 @@
 // app/api/admin/discounts/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireFreshAdmin } from "@/lib/security/admin";
 import type { Prisma } from "@prisma/client";
 
 /**
@@ -39,8 +39,8 @@ function toNumOrNull(v: any) {
  * - P2002 => code duplicado (409)
  */
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const admin = await requireFreshAdmin();
+  if (!admin) {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 

@@ -1,7 +1,7 @@
 // app/api/admin/businesses/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireFreshAdmin } from "@/lib/security/admin";
 
 /**
  * Convierte a string trimmed o null.
@@ -51,10 +51,10 @@ function normUrl(u: any) {
  *   esas categorías se pueden asignar en otras rutas o se aseguran al crear/editar descuentos.
  */
 export async function POST(req: Request) {
-  const session = await auth();
+  const admin = await requireFreshAdmin();
 
   // Compatibilidad defensiva: si por alguna razón el shape cambiara, intenta ambos caminos
-  const role = (session as any)?.user?.role ?? (session as any)?.role ?? "USER";
+  const role = admin?.session.user.role ?? "USER";
   if (role !== "ADMIN") {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }

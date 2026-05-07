@@ -37,6 +37,7 @@ export default async function LegacyRedeemBridgePage({ params }: PageProps) {
     select: {
       id: true,
       status: true,
+      tokenVersion: true,
     },
   });
 
@@ -53,7 +54,7 @@ export default async function LegacyRedeemBridgePage({ params }: PageProps) {
     );
   }
 
-  const newToken = await makeCardToken(user.id);
+  const newToken = await makeCardToken(user.id, user.tokenVersion);
 
   redirect(`/redeem?token=${encodeURIComponent(newToken)}`);
 }

@@ -1,7 +1,7 @@
 // app/api/admin/businesses/[id]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireFreshAdmin } from "@/lib/security/admin";
 
 function toNull(v: any) {
   const s = (v ?? "").toString().trim();
@@ -33,8 +33,8 @@ function normUrl(u: any) {
  * - googleMapsUrl se guarda como string o null
  */
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  const session = await auth();
-  const role = (session as any)?.user?.role ?? (session as any)?.role ?? "USER";
+  const admin = await requireFreshAdmin();
+  const role = admin?.session.user.role ?? "USER";
   if (role !== "ADMIN") {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }

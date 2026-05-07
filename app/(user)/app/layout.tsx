@@ -1,7 +1,12 @@
 // app/(user)/app/layout.tsx
 import BottomNav from "@/components/pachacard/BottomNav";
+import { requireActiveSession } from "@/lib/security/admin";
+import { redirect } from "next/navigation";
 
-export default function AppSectionLayout({ children }: { children: React.ReactNode }) {
+export default async function AppSectionLayout({ children }: { children: React.ReactNode }) {
+  const active = await requireActiveSession();
+  if (!active) redirect("/login");
+
   return (
     <>
       {children}

@@ -1,7 +1,7 @@
 // app/api/admin/discounts/[id]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireFreshAdmin } from "@/lib/security/admin";
 import type { Prisma } from "@prisma/client";
 
 /**
@@ -55,8 +55,8 @@ function toNumOrNull(v: any) {
  */
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   // Autorización por rol (la fuente es la sesión de NextAuth)
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const admin = await requireFreshAdmin();
+  if (!admin) {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 
@@ -219,8 +219,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
  *   borrar relaciones primero o "archivar" en vez de eliminar.
  */
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const admin = await requireFreshAdmin();
+  if (!admin) {
     return NextResponse.json({ ok: false, message: "No autorizado" }, { status: 403 });
   }
 

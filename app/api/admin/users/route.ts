@@ -2,8 +2,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { auth } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { requireFreshAdmin } from "@/lib/security/admin";
 
 /**
  * POST /api/admin/users
@@ -23,8 +23,8 @@ import { writeAuditLog } from "@/lib/audit";
  * - password se guarda como hash (bcrypt), nunca como texto.
  */
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const admin = await requireFreshAdmin();
+  if (!admin) {
     return NextResponse.json({ ok: false }, { status: 403 });
   }
 
@@ -59,8 +59,8 @@ export async function POST(req: Request) {
     });
 
     await writeAuditLog({
-      actorId: (session.user as any).id ?? null,
-      actorEmail: session.user.email ?? null,
+      actorId: admin.session.user.id ?? null,
+      actorEmail: admin.session.user.email ?? null,
       action: "CREATE",
       module: "USERS",
       entity: "User",

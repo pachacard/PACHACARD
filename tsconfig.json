@@ -13,7 +13,6 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "jsx": "preserve",
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"

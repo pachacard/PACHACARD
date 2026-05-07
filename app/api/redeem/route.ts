@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { verifyQrToken } from "@/lib/token";
 import { prisma } from "@/lib/prisma";
-import { rateLimit } from "@/lib/rateLimit";
+import { limitRedeemRequest } from "@/lib/security/redeemRateLimit";
 import type { Prisma } from "@prisma/client";
 
 /**
@@ -86,12 +86,6 @@ function extractTokenVersion(payload: unknown): number | null {
  * Nota: En entornos con proxy/CDN, x-forwarded-for suele traer IPs en lista.
  * Aquí concatenamos IP + user-agent para bajar colisiones.
  */
-function buildRateLimitKey(req: Request): string {
-  const ip = req.headers.get("x-forwarded-for") || "ip";
-  const ua = req.headers.get("user-agent") || "";
-  return `${ip}|${ua}`;
-}
-
 /**
  * GET /api/redeem?token=...
  * Verifica el token QR y retorna datos mínimos del usuario.
@@ -108,12 +102,19 @@ export async function GET(req: Request) {
   console.log(`[redeem:GET] rid=${meta.rid} token_present=${!!token}`);
 
   // Anti-abuso
-  const key = buildRateLimitKey(req);
-  if (!rateLimit(key)) {
+  const rl = await limitRedeemRequest(req, "redeem-get");
+  if (!rl.success) {
     console.log(`[redeem:GET] rid=${meta.rid} rate_limit=BLOCK`);
     return NextResponse.json(
       { ok: false, message: "Rate limit excedido" },
-      { status: 429 }
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": String(rl.limit),
+          "X-RateLimit-Remaining": String(rl.remaining),
+          "X-RateLimit-Reset": String(rl.reset),
+        },
+      }
     );
   }
   console.log(`[redeem:GET] rid=${meta.rid} rate_limit=OK`);
@@ -200,12 +201,19 @@ export async function POST(req: Request) {
   const token = url.searchParams.get("token") || "";
   console.log(`[redeem:POST] rid=${metaReq.rid} token_present=${!!token}`);
 
-  const key = buildRateLimitKey(req);
-  if (!rateLimit(key)) {
+  const rl = await limitRedeemRequest(req, "redeem-post");
+  if (!rl.success) {
     console.log(`[redeem:POST] rid=${metaReq.rid} rate_limit=BLOCK`);
     return NextResponse.json(
       { ok: false, message: "Rate limit excedido" },
-      { status: 429 }
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": String(rl.limit),
+          "X-RateLimit-Remaining": String(rl.remaining),
+          "X-RateLimit-Reset": String(rl.reset),
+        },
+      }
     );
   }
   console.log(`[redeem:POST] rid=${metaReq.rid} rate_limit=OK`);

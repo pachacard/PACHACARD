@@ -16,6 +16,8 @@
   "dependencies": {
     "@auth/core": "0.35.3",
     "@prisma/client": "5.22.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "bcryptjs": "2.4.3",
     "clsx": "2.1.1",
     "date-fns": "3.6.0",
@@ -49,5 +51,4 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   }
-
 }

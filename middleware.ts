@@ -3,32 +3,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-/**
- * Middleware de control de acceso para PACHACARD.
- *
- * Responsabilidades:
- * - Proteger rutas privadas: /app y /admin
- * - Redirigir a /login si no hay sesión
- * - Enforzar rol ADMIN para /admin
- * - Mejorar UX: si ADMIN entra a /app, lo redirige a /admin
- * - Si hay sesión y visita /login, lo redirige a su destino (callbackUrl o home por rol)
- *
- * Fuente de verdad del rol:
- * - El rol viene del token de NextAuth (JWT session).
- * - Se espera que en auth.ts se haya persistido token.role en callbacks.jwt().
- */
-
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
-  /**
-   * Excepciones:
-   * - No interceptar rutas de NextAuth (/api/auth)
-   * - No interceptar assets estáticos de Next.js (_next)
-   * - No interceptar favicon ni archivos estáticos comunes
-   *
-   * Esto evita loops y reduce latencia innecesaria.
-   */
   if (
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/_next") ||
@@ -38,74 +15,100 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  /**
-   * Obtiene el token de sesión (NextAuth JWT).
-   *
-   * Notas:
-   * - secret debe coincidir con el usado en NextAuth (NEXTAUTH_SECRET).
-   * - secureCookie: true asume entorno https; si pruebas local en http y tienes problemas,
-   *   podrías condicionarlo por NODE_ENV (pero en producción debe ser true).
-   */
- const token = await getToken({
-  req,
-  secret: process.env.NEXTAUTH_SECRET,
-  secureCookie: process.env.NODE_ENV === "production",
-});
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === "production",
+  });
 
   const role = (token as any)?.role || "USER";
+  const isAdminApi = pathname.startsWith("/api/admin");
+  const isRedeemApi = pathname === "/api/redeem" || pathname.startsWith("/api/redeem/");
+  const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
 
-  // Zonas privadas: requieren sesión
-  const needsAuth = pathname.startsWith("/app") || pathname.startsWith("/admin");
+  if ((isAdminApi || isRedeemApi) && isMutation) {
+    const origin = req.headers.get("origin");
+    const secFetchSite = req.headers.get("sec-fetch-site");
+    const contentType = req.headers.get("content-type") || "";
+    const allowedOrigins = [
+      process.env.NEXT_PUBLIC_BASE_URL,
+      process.env.NEXTAUTH_URL,
+      req.nextUrl.origin,
+    ].filter(Boolean);
 
-  /**
-   * Si no hay sesión y se intenta entrar a zona privada:
-   * - redirige a /login
-   * - guarda callbackUrl para retornar exactamente a la URL solicitada
-   */
+    if (origin && !allowedOrigins.includes(origin)) {
+      return NextResponse.json(
+        { ok: false, message: "Origen no permitido" },
+        { status: 403 }
+      );
+    }
+
+    if (
+      secFetchSite &&
+      !["same-origin", "same-site", "none"].includes(secFetchSite)
+    ) {
+      return NextResponse.json(
+        { ok: false, message: "Solicitud no permitida" },
+        { status: 403 }
+      );
+    }
+
+    if (contentType && !contentType.toLowerCase().includes("application/json")) {
+      return NextResponse.json(
+        { ok: false, message: "Content-Type invalido" },
+        { status: 415 }
+      );
+    }
+  }
+
+  const needsAuth =
+    pathname.startsWith("/app") || pathname.startsWith("/admin") || isAdminApi;
+
   if (!token && needsAuth) {
+    if (isAdminApi) {
+      return NextResponse.json(
+        { ok: false, message: "No autenticado" },
+        { status: 401 }
+      );
+    }
+
     const url = new URL("/login", req.url);
     url.searchParams.set("callbackUrl", pathname + (search || ""));
     return NextResponse.redirect(url);
   }
 
-  /**
-   * Si es ADMIN y entra al portal de usuario /app:
-   * - mejora UX: mándalo al panel /admin como home principal.
-   */
   if (token && pathname.startsWith("/app") && role === "ADMIN") {
     return NextResponse.redirect(new URL("/admin", req.url));
   }
 
-  /**
-   * /admin requiere rol ADMIN.
-   * Si alguien logueado como USER intenta entrar:
-   * - lo redirigimos al portal /app
-   */
-  if (token && pathname.startsWith("/admin") && role !== "ADMIN") {
+  if (token && (pathname.startsWith("/admin") || isAdminApi) && role !== "ADMIN") {
+    if (isAdminApi) {
+      return NextResponse.json(
+        { ok: false, message: "No autorizado" },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.redirect(new URL("/app", req.url));
   }
 
-  /**
-   * Si hay sesión y visita /login:
-   * - Si existe callbackUrl, respétalo
-   * - Si no existe, manda al home según rol
-   */
   if (token && pathname === "/login") {
     const cb = req.nextUrl.searchParams.get("callbackUrl");
     if (cb) return NextResponse.redirect(new URL(cb, req.url));
 
-    const dest = role === "ADMIN" ? "/admin" : "/app";
-    return NextResponse.redirect(new URL(dest, req.url));
+    return NextResponse.redirect(new URL(role === "ADMIN" ? "/admin" : "/app", req.url));
   }
 
   return NextResponse.next();
 }
 
-/**
- * Matcher:
- * - Se ejecuta en /login, /app/* y /admin/*
- * - Ojo: aunque excluyes estáticos arriba, esto reduce ejecución innecesaria.
- */
 export const config = {
-  matcher: ["/login", "/app/:path*", "/admin/:path*"],
+  matcher: [
+    "/login",
+    "/app/:path*",
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/api/redeem",
+    "/api/redeem/:path*",
+  ],
 };

@@ -1,10 +1,10 @@
 // app/(user)/app/me/page.tsx
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import * as jose from "jose";
 import QRCode from "qrcode";
 import { redirect } from "next/navigation";
 import SignOutButton from "@/components/auth/SignOutButton";
+import { makeCardToken } from "@/lib/token";
 
 export const dynamic = "force-dynamic";
 
@@ -15,19 +15,7 @@ export const dynamic = "force-dynamic";
  * - jti se setea con tokenVersion para permitir rotación/invalidez de QRs anteriores.
  */
 async function buildStableQr(user: any) {
-  const secret = new TextEncoder().encode(process.env.QR_JWT_SECRET || "devsecret");
-
-  const createdAt = new Date(user.createdAt ?? Date.now());
-  const iatSec = Math.floor(createdAt.getTime() / 1000);
-  const expSec = iatSec + 60 * 60 * 24 * 365; // 1 año desde el alta
-
-  const jwt = await new jose.SignJWT({ tier: user.tier })
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(String(user.id)) // sub = userId
-    .setJti(String(user.tokenVersion ?? 1)) // versión del token
-    .setIssuedAt(iatSec)
-    .setExpirationTime(expSec)
-    .sign(secret);
+  const jwt = await makeCardToken(String(user.id), Number(user.tokenVersion ?? 1));
 
   // Se arma la URL base según entorno (Vercel/Local)
   const base =
