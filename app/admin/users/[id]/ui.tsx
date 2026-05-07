@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { User } from "@prisma/client";
+import QR from "../qr";
 
 export default function UserForm({ item }: { item: User }) {
   const router = useRouter();
@@ -148,6 +149,18 @@ export default function UserForm({ item }: { item: User }) {
           <p className="help">
             Esto incrementa <code>tokenVersion</code> para invalidar codigos anteriores.
           </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-semibold text-slate-950">QR para tarjeta fisica</h2>
+              <p className="help">
+                Genera y descarga el QR de canje sin iniciar sesion como este usuario.
+              </p>
+            </div>
+            <QR userId={item.id} userName={item.name} />
+          </div>
         </div>
       </div>
     </div>

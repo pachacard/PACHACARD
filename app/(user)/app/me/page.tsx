@@ -5,7 +5,6 @@ import * as jose from "jose";
 import QRCode from "qrcode";
 import { redirect } from "next/navigation";
 import SignOutButton from "@/components/auth/SignOutButton";
-import QrActions from "./QrActions";
 
 export const dynamic = "force-dynamic";
 
@@ -264,9 +263,6 @@ export default async function MePage() {
                   <li>El código es estable y no cambia al recargar.</li>
                   <li>Si se pierde la tarjeta, se rota el token para invalidar el QR anterior.</li>
                 </ul>
-
-               
-                <QrActions redeemUrl={qr.url} qrSrc={qr.dataUrl} />
 
                 <div className="pt-2 border-t border-slate-200 md:hidden">
                   <SignOutButton />
