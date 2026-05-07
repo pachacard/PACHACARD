@@ -222,8 +222,8 @@ export default async function MePage() {
                 se puede coordinar por los canales indicados.
               </p>
               <ul className="space-y-1">
-                <li>• Central telefónica: 921561684</li>
                 <li>• Correo de consultas: pachacardmuni@gmail.com</li>
+                <li>• Atención presencial: área de Licencias y Desarrollo Económico.</li>
               </ul>
             </div>
           </div>
